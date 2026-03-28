@@ -1,0 +1,27 @@
+﻿.next/dev/types/validator.ts(53,39): error TS2307: Cannot find module '../../../app/page.js' or its corresponding type declarations.
+.next/types/validator.ts(42,39): error TS2307: Cannot find module '../../app/page.js' or its corresponding type declarations.
+app/[code]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/[code]/route.ts(3,44): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/[code]/route.ts(6,73): error TS2307: Cannot find module '@/lib/queries/urls' or its corresponding type declarations.
+app/[code]/route.ts(7,29): error TS2307: Cannot find module '@/lib/queries/clicks' or its corresponding type declarations.
+app/[code]/route.ts(100,24): error TS2351: This expression is not constructable.
+  Type 'typeof UAParser' has no construct signatures.
+app/api/admin/urls/[id]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/admin/urls/[id]/route.ts(3,30): error TS2307: Cannot find module '@/lib/auth' or its corresponding type declarations.
+app/api/admin/urls/[id]/route.ts(4,33): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/api/admin/urls/[id]/route.ts(5,60): error TS2307: Cannot find module '@/lib/queries/urls' or its corresponding type declarations.
+app/api/admin/urls/[id]/route.ts(6,32): error TS2307: Cannot find module '@/lib/queries/audit' or its corresponding type declarations.
+app/api/health/check/route.ts(2,10): error TS2305: Module '"@/backend/src/utils/redis"' has no exported member 'deleteCachedUrl'.
+app/api/stats/[code]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(3,29): error TS2307: Cannot find module '@/lib/auth' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(4,35): error TS2307: Cannot find module '@/lib/queries/urls' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(5,33): error TS2307: Cannot find module '@/lib/queries/stats' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(6,34): error TS2307: Cannot find module '@/lib/queries/health' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(7,30): error TS2307: Cannot find module '@/lib/queries/qr' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(13,8): error TS2307: Cannot find module '@/lib/queries/clicks' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(3,29): error TS2307: Cannot find module '@/lib/auth' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(4,33): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(5,43): error TS2307: Cannot find module '@/lib/queries/urls' or its corresponding type declarations.
+app/api/urls/route.ts(4,41): error TS2307: Cannot find module '@/backend/src/utils/short-code' or its corresponding type declarations.
+app/api/urls/route.ts(7,10): error TS2724: '"@/backend/src/utils/redis"' has no exported member named 'setCachedUrl'. Did you mean 'setCache'?

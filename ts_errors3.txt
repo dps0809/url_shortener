@@ -1,0 +1,5 @@
+﻿.next/dev/types/validator.ts(53,39): error TS2307: Cannot find module '../../../app/page.js' or its corresponding type declarations.
+.next/types/validator.ts(42,39): error TS2307: Cannot find module '../../app/page.js' or its corresponding type declarations.
+app/[code]/route.ts(3,10): error TS2724: '"@/backend/src/utils/redis"' has no exported member named 'getCachedUrl'. Did you mean 'getCache'?
+app/[code]/route.ts(100,24): error TS2351: This expression is not constructable.
+  Type 'typeof UAParser' has no construct signatures.

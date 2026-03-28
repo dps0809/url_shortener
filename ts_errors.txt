@@ -1,0 +1,33 @@
+﻿.next/dev/types/validator.ts(53,39): error TS2307: Cannot find module '../../../app/page.js' or its corresponding type declarations.
+.next/types/validator.ts(42,39): error TS2307: Cannot find module '../../app/page.js' or its corresponding type declarations.
+app/[code]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/[code]/route.ts(3,44): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/[code]/route.ts(100,24): error TS2351: This expression is not constructable.
+  Type 'typeof UAParser' has no construct signatures.
+app/api/admin/urls/[id]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/admin/urls/[id]/route.ts(4,33): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/api/admin/urls/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/auth/login/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/auth/logout/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/auth/register/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/health/check/route.ts(1,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/health/check/route.ts(2,33): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/api/stats/[code]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/urls/[id]/route.ts(4,33): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+app/api/urls/route.ts(2,18): error TS2307: Cannot find module '@/lib/db' or its corresponding type declarations.
+app/api/urls/route.ts(4,41): error TS2307: Cannot find module '@/lib/short-code' or its corresponding type declarations.
+app/api/urls/route.ts(7,30): error TS2307: Cannot find module '@/lib/redis' or its corresponding type declarations.
+backend/src/app/redirect/[short_code]/route.ts(4,10): error TS2305: Module '"../../../../../test-db"' has no exported member 'prisma'.
+backend/src/services/analytics.service.ts(2,24): error TS2307: Cannot find module '../../../../test-db' or its corresponding type declarations.
+backend/src/services/url.service.ts(1,24): error TS2307: Cannot find module '../../../../test-db' or its corresponding type declarations.
+backend/src/services/url.service.ts(6,10): error TS2305: Module '"../utils/shortCode"' has no exported member 'generateShortCode'.
+backend/src/utils/redis.ts(2,21): error TS2306: File 'C:/Coding/url_shortener/backend/src/config/env.ts' is not a module.
+backend/src/utils/shortCode.ts(3,33): error TS2307: Cannot find module './queries/urls' or its corresponding type declarations.
+backend/src/workers/clickSync.worker.ts(2,24): error TS2307: Cannot find module '../../../../test-db' or its corresponding type declarations.
+backend/src/workers/deadLink.worker.ts(2,24): error TS2307: Cannot find module '../../../../test-db' or its corresponding type declarations.
+backend/src/workers/deadLink.worker.ts(21,49): error TS7006: Parameter 'urlRecord' implicitly has an 'any' type.
+backend/src/workers/malwareScan.worker.ts(3,24): error TS2307: Cannot find module '../../../../test-db' or its corresponding type declarations.
+lib/auth.ts(3,18): error TS2307: Cannot find module './db' or its corresponding type declarations.
+lib/migrate.ts(11,18): error TS2307: Cannot find module './db' or its corresponding type declarations.
+test-db.ts(2,18): error TS2307: Cannot find module './lib/db' or its corresponding type declarations.
