@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCache, setCache, incrCounter } from '../../../utils/redis';
-import pool from '../../../utils/db'; // Pure pg
+import { checkRedirectLimit } from '../../../services/rateLimit.service';
+import pool from '../../../utils/db'; // Direct query just like the snippet
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +11,17 @@ export async function GET(
 
   if (!code) {
     return NextResponse.json({ error: 'Invalid code' }, { status: 400 });
+  }
+
+  // Rate Limiting Concept from previous setup
+  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+  try {
+    const isAllowed = await checkRedirectLimit(ipAddress);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+  } catch (error) {
+    console.warn('Rate limiting failed, proceeding anyway:', error);
   }
 
   const cacheKey = `short:${code}`;
@@ -25,8 +37,9 @@ export async function GET(
     }
 
     // 2. Cache MISS -> Query DB (PostgreSQL)
+    // Merged concept: Using the actual DB schema column names (long_url, expiry_date, is_deleted)
     const result = await pool.query(
-      `SELECT id, "originalUrl", status, "expiresAt" FROM urls WHERE "shortCode" = $1 LIMIT 1`,
+      `SELECT id, long_url as "originalUrl", status, expiry_date as "expiresAt", is_deleted FROM urls WHERE short_code = $1 LIMIT 1`,
       [code]
     );
 
@@ -36,8 +49,13 @@ export async function GET(
 
     const urlRecord = result.rows[0];
 
-    if (urlRecord.status === 'DISABLED' || urlRecord.status === 'MALICIOUS') {
-      return NextResponse.json({ error: 'URL is disabled' }, { status: 403 });
+    // Respecting soft delete as well!
+    if (urlRecord.is_deleted) {
+      return NextResponse.json({ error: 'URL not found' }, { status: 404 });
+    }
+
+    if (urlRecord.status === 'disabled' || urlRecord.status === 'malicious' || urlRecord.status === 'dead') {
+      return NextResponse.json({ error: 'URL is deactivated or dangerous' }, { status: 410 });
     }
 
     const now = new Date();
@@ -52,7 +70,7 @@ export async function GET(
       ttl = Math.max(1, Math.floor(msDiff / 1000));
     }
 
-    // Store in Redis
+    // Store in Redis (we use utils/redis setCache directly)
     await setCache(cacheKey, urlRecord.originalUrl, ttl);
 
     // 5. Click Counter

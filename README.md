@@ -91,3 +91,62 @@ npm run dev
 
 ### 4. Running the Workers
 Ensure your BullMQ worker processes are running (usually alongside the main backend process or in a separate container depending on your deployment model).
+
+## 🏗 Background Processing: 5-Worker 5-Queue Architecture
+
+The system features a robust, sequential, and periodic processing pipeline implemented using BullMQ and Redis.
+
+### 1. Sequential Creation Pipeline
+The URL creation process is split into two distinct, awaited steps to ensure maximum security and data integrity:
+1.  **Scan Step**: `url.service` enqueues a job to the `scanQueue` and waits for completion.
+2.  **Creation Step**: Only if the scan is safe, `url.service` enqueues a job to the `linkCreationQueue` and waits for the database record to be created.
+3.  **Fan-out Step**: `linkCreation.worker` stores the URL and then triggers the non-blocking asynchronous tasks (`qrQueue`, `analyticsQueue`, `loggingQueue`).
+
+### 2. Specialized Personnel (Workers)
+Each background task has its own dedicated worker file:
+-   **scan.worker.ts**: Pure malware scanning (VirusTotal + Google Safe Browsing).
+-   **linkCreation.worker.ts**: Database insertion and fan-out trigger.
+-   **qr.worker.ts**: QR code generation.
+-   **analytics.worker.ts**: Real-time click logging and periodic batch synchronization.
+-   **deadLink.worker.ts**: Periodic health checks.
+-   **expiry.worker.ts**: Periodic link expiry cleanup.
+
+### 3. Dedicated Queues
+Queues are defined in individual files for better modularity:
+-   `backend/src/queues/scan.queue.ts`
+-   `backend/src/queues/linkCreation.queue.ts`
+-   `backend/src/queues/qr.queue.ts`
+-   `backend/src/queues/analytics.queue.ts`
+-   `backend/src/queues/maintenance.queue.ts`
+-   `backend/src/queues/logging.queue.ts`
+
+### 4. Periodic Maintenance Scheduling
+The `worker.service.ts` automatically schedules the following tasks:
+-   **Analytics Sync**: Every 30 minutes.
+-   **Dead Link Detection**: Every 1 hour.
+-   **Expiry Cleanup**: Every 10 minutes.
+
+### 5. Execution Pipeline (Workflow)
+
+```mermaid
+sequenceDiagram
+    participant API as URL Service
+    participant SW as Scan Worker
+    participant LW as Link Worker
+    participant QRW as QR Worker
+
+    API->>SW: Enqueue Scan (Await)
+    SW-->>API: Safe!
+    API->>LW: Enqueue Creation (Await)
+    LW->>DB: INSERT URL
+    LW-->>API: Record Created!
+    par Asynchronous Fan-out
+        LW->>QRW: Enqueue QR
+        LW->>AW: Enqueue Analytics Setup
+        LW->>LOG: Enqueue Log
+    end
+    API-->>User: Short Code Response
+```
+
+> [!TIP]
+> Use the `/workers/queues` API route to monitor the status of all 6 queues simultaneously.

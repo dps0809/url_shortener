@@ -1,14 +1,25 @@
 import { Queue } from 'bullmq';
 import { redis } from '../utils/redis';
 
-export const analyticsQueue = new Queue('analytics', {
+export interface AnalyticsSetupJobData {
+  urlId: number;
+  shortCode: string;
+}
+
+export interface AnalyticsClickJobData {
+  shortCode: string;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: Date;
+}
+
+export type AnalyticsJobData = AnalyticsSetupJobData | AnalyticsClickJobData;
+
+export const analyticsQueue = new Queue<AnalyticsJobData>('analyticsQueue', {
   connection: redis,
   defaultJobOptions: {
     attempts: 5,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
+    backoff: { type: 'exponential', delay: 2000 },
     removeOnComplete: true,
     removeOnFail: 500,
   },

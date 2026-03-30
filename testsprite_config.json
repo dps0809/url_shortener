@@ -1,0 +1,47 @@
+{
+  "name": "URL Shortener - Backend & API Testing",
+  "version": "1.0.0",
+  "baseUrl": "http://localhost:3000",
+  "specs": [
+    "./docs/testsprite_prd.md",
+    "./docs/openapi.yaml"
+  ],
+  "criticalFlows": [
+    {
+      "name": "URL Creation Pipeline",
+      "path": "/api/urls",
+      "method": "POST",
+      "priority": "HIGH"
+    },
+    {
+      "name": "Redirection Caching",
+      "path": "/r/{shortCode}",
+      "method": "GET",
+      "priority": "HIGH"
+    },
+    {
+      "name": "Analytic Click Logging",
+      "path": "/api/analytics/{shortCode}",
+      "method": "GET",
+      "priority": "MEDIUM"
+    },
+    {
+      "name": "Malware Blocking Verification",
+      "path": "/api/urls",
+      "method": "POST",
+      "scenario": "malicious_url_submit",
+      "priority": "CRITICAL"
+    }
+  ],
+  "auth": {
+    "type": "NONE",
+    "note": "Public creation enabled for short-term testing. If production auth is added, provide JWT here."
+  },
+  "environments": {
+    "local": {
+      "url": "http://localhost:3000",
+      "redis": "redis://localhost:6379",
+      "postgres": "postgresql://user:password@localhost:5432/url_shortener"
+    }
+  }
+}

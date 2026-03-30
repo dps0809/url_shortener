@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Scalable URL Shortener API
+  description: High-performance, secure URL shortener service with real-time analytics.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /api/urls:
+    get:
+      summary: List user URLs
+      responses:
+        '200':
+          description: A list of URL records
+    post:
+      summary: Create a short URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                longUrl:
+                  type: string
+                customAlias:
+                  type: string
+                expiryDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: URL shortened successfully
+        '403':
+          description: Malicious URL blocked
+        '429':
+          description: Rate limit exceeded
+  /api/urls/{id}:
+    delete:
+      summary: Soft delete a URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: URL deleted
+  /api/analytics/{shortCode}:
+    get:
+      summary: Get click stats for a specific URL
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Click statistics
+  /api/workers/queues:
+    get:
+      summary: Monitor background queue status
+      responses:
+        '200':
+          description: Queue job counts
+  /api/workers/sync-clicks:
+    post:
+      summary: Manually trigger click sync
+      responses:
+        '200':
+          description: Sync triggered
+  /api/system/metrics:
+    get:
+      summary: Overall system metrics
+      responses:
+        '200':
+          description: Metrics data
+components:
+  schemas:
+    UrlRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        short_code:
+          type: string
+        long_url:
+          type: string
+        user_id:
+          type: integer
+        click_count:
+          type: integer
+        expiry_date:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time

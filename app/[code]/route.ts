@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { getCache, setCache } from '@/backend/src/utils/redis';
 import { redirect } from 'next/navigation';
-import UAParser from 'ua-parser-js';
+import { UAParser } from 'ua-parser-js';
 import { getUrlForRedirect, incrementClickCount, updateUrlStatus } from '@/backend/src/utils/queries/urls';
 import { insertClick } from '@/backend/src/utils/queries/clicks';
 
@@ -97,7 +97,7 @@ async function logClick(request: NextRequest, shortCode: string) {
 
     // Parse user agent
     const userAgent = request.headers.get('user-agent') || '';
-    const parser = new (UAParser as any)(userAgent);
+    const parser = new UAParser(userAgent);
     const deviceType = parser.getDevice().type;
     const device = deviceType === 'mobile' || deviceType === 'tablet' ? 'mobile' : 'desktop';
 

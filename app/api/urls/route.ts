@@ -1,16 +1,9 @@
 ﻿import { NextRequest } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { requireAuth } from '@/backend/src/utils/auth';
-import { generateUniqueShortCode } from '@/backend/src/utils/shortCode';
-import { scanUrl } from '@/backend/src/utils/safety';
-import { generateQrCode } from '@/backend/src/utils/qr';
-import { setCache } from '@/backend/src/utils/redis';
-import { createUrl, listUrlsByUser } from '@/backend/src/utils/queries/urls';
-import { insertSafetyScan } from '@/backend/src/utils/queries/safety';
-import { insertQrCode } from '@/backend/src/utils/queries/qr';
-import { initLinkHealth } from '@/backend/src/utils/queries/health';
-import { initUrlStats } from '@/backend/src/utils/queries/stats';
+import { createShortUrl } from '@/backend/src/services/url.service';
 import { checkAndIncrementUsage } from '@/backend/src/utils/queries/usage';
+import { listUrlsByUser } from '@/backend/src/utils/queries/urls';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -34,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Validate input
     const body = await request.json();
-    const { longUrl, expiryDate, maxClicks } = body;
+    const { longUrl, expiryDate, customAlias } = body;
 
     if (!longUrl || typeof longUrl !== 'string') {
       return Response.json(
@@ -52,69 +45,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Safety scan
-    const scanResult = await scanUrl(longUrl);
-
-    // 5. Generate unique short code (with retry)
-    const shortCode = await generateUniqueShortCode(client);
-
-    // 6. Begin transaction for all inserts
-    await client.query('BEGIN');
-
-    // 7. Insert into urls table
-    const status = scanResult.result === 'safe' ? 'active' : 'malicious';
-    const url = await createUrl(
-      client,
-      shortCode,
-      longUrl,
-      user.userId,
-      expiryDate || null,
-      maxClicks || null
-    );
-
-    // Update status if malicious
-    if (status === 'malicious') {
-      await client.query('UPDATE urls SET status = $1 WHERE url_id = $2', [status, url.url_id]);
-    }
-
-    // 8. Insert safety scan record
-    // On API failure, scanUrl returns result='safe' with error fallback provider.
-    // Per rule 9: if scan API fails, store 'error' â€” but our safety.ts already
-    // handles this by returning a safe fallback. Store actual result.
-    await insertSafetyScan(client, url.url_id, scanResult.result, scanResult.provider);
-
-    // 9. Generate QR code â†’ insert into qr_codes
-    const shortUrl = `${BASE_URL}/${shortCode}`;
-    const qrImageUrl = await generateQrCode(shortUrl, shortCode);
-    await insertQrCode(client, url.url_id, qrImageUrl);
-
-    // 10. Init link health record
-    await initLinkHealth(client, url.url_id);
-
-    // 11. Init url_stats record
-    await initUrlStats(client, url.url_id);
-
-    await client.query('COMMIT');
-
-    // 12. Cache in Redis (outside transaction â€” non-critical)
-    if (status === 'active') {
-      await setCache(shortCode, longUrl);
-    }
+    const expiry = expiryDate ? new Date(expiryDate) : undefined;
+    const url = await createShortUrl(longUrl, user.userId, customAlias, expiry);
+    const shortUrl = `${BASE_URL}/${url.short_code}`;
 
     return Response.json(
       {
         message: 'Short URL created',
         url: {
-          urlId: url.url_id,
+          urlId: url.id,
           shortCode: url.short_code,
           shortUrl,
           longUrl: url.long_url,
           createdAt: url.created_at,
           expiryDate: url.expiry_date,
-          maxClicks: url.max_clicks,
-          status,
-          qrCodeUrl: qrImageUrl,
-          safetyStatus: scanResult.result,
+          status: url.status,
+          safetyStatus: 'safe',
         },
         rateLimit: {
           remaining: rateLimit.remaining,
@@ -123,7 +69,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
     if (error instanceof Response) throw error;
     console.error('Create URL error:', error);
     return Response.json(

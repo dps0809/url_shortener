@@ -1,25 +1,67 @@
-import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
+import { scanQueue, scanQueueEvents, ScanQueueJobData } from '../queues/scan.queue';
+import { linkCreationQueue, linkCreationQueueEvents, LinkCreationQueueJobData } from '../queues/linkCreation.queue';
+import { qrQueue, QRQueueJobData } from '../queues/qr.queue';
+import { analyticsQueue, AnalyticsJobData, AnalyticsClickJobData, AnalyticsSetupJobData } from '../queues/analytics.queue';
+import { maintenanceQueue, maintenanceQueueEvents, MaintenanceQueueJobData } from '../queues/maintenance.queue';
+import { loggingQueue, LoggingQueueJobData } from '../queues/logging.queue';
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379');
-
-export const linkCreationQueue = new Queue('linkCreation', { connection });
-export const scanJobQueue = new Queue('scanJob', { connection });
-export const qrGenerationQueue = new Queue('qrGeneration', { connection });
-export const analyticsSyncQueue = new Queue('analyticsSync', { connection });
-
-export const enqueueLinkCreation = async (urlId: number, shortCode: string, longUrl: string) => {
-  await linkCreationQueue.add('create', { urlId, shortCode, longUrl });
+export {
+  scanQueue,
+  scanQueueEvents,
+  linkCreationQueue,
+  linkCreationQueueEvents,
+  qrQueue,
+  analyticsQueue,
+  maintenanceQueue,
+  maintenanceQueueEvents,
+  loggingQueue
 };
 
-export const enqueueScanJob = async (urlId: number, longUrl: string, userId: number) => {
-  await scanJobQueue.add('scan', { urlId, longUrl, userId });
+export type {
+  ScanQueueJobData,
+  LinkCreationQueueJobData,
+  QRQueueJobData,
+  AnalyticsJobData,
+  AnalyticsClickJobData,
+  AnalyticsSetupJobData,
+  MaintenanceQueueJobData,
+  LoggingQueueJobData
 };
 
-export const enqueueQRGeneration = async (urlId: number, longUrl: string) => {
-  await qrGenerationQueue.add('generate', { urlId, longUrl });
+// Helper Enqueuers
+export const enqueueScanJob = async (data: ScanQueueJobData) => {
+  return await scanQueue.add('scan', data);
 };
 
-export const enqueueAnalyticsSync = async (data: { shortCode: string, ipAddress: string, userAgent: string, timestamp: Date }) => {
-  await analyticsSyncQueue.add('sync', data);
+export const enqueueLinkCreationJob = async (data: LinkCreationQueueJobData) => {
+  return await linkCreationQueue.add('create', data);
 };
+
+export const enqueueQRGeneration = async (data: QRQueueJobData) => {
+  await qrQueue.add('generate', data);
+};
+
+export const enqueueAnalyticsSync = async (data: AnalyticsClickJobData) => {
+  await analyticsQueue.add('click', data);
+};
+
+export const enqueueAnalyticsSetup = async (data: AnalyticsSetupJobData) => {
+  await analyticsQueue.add('setup', data);
+};
+
+export const enqueueLogging = async (data: LoggingQueueJobData) => {
+  await loggingQueue.add('log', data);
+};
+
+export const enqueueMaintenanceJob = async (data: MaintenanceQueueJobData) => {
+  await maintenanceQueue.add(data.task, data);
+};
+
+export const enqueueMalwareScan = async (urlId: number, originalUrl: string) => {
+  await maintenanceQueue.add('malware_scan', { task: 'malware_scan', urlId, originalUrl });
+};
+
+// Legacy Aliases
+export const scanJobQueue = scanQueue;
+export const qrGenerationQueue = qrQueue;
+export const analyticsSyncQueue = analyticsQueue;
