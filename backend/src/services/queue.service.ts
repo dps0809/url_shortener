@@ -65,3 +65,29 @@ export const enqueueMalwareScan = async (urlId: number, originalUrl: string) => 
 export const scanJobQueue = scanQueue;
 export const qrGenerationQueue = qrQueue;
 export const analyticsSyncQueue = analyticsQueue;
+
+export async function getActiveWorkerCount(): Promise<{ total: number; detail: Record<string, number> }> {
+  const queues = [
+    { name: 'scan', queue: scanQueue },
+    { name: 'creation', queue: linkCreationQueue },
+    { name: 'qr', queue: qrQueue },
+    { name: 'analytics', queue: analyticsQueue },
+    { name: 'maintenance', queue: maintenanceQueue },
+    { name: 'logging', queue: loggingQueue },
+  ];
+
+  const detail: Record<string, number> = {};
+  let total = 0;
+
+  for (const { name, queue } of queues) {
+    try {
+      const workers = await queue.getWorkers();
+      detail[name] = workers.length;
+      total += workers.length;
+    } catch {
+      detail[name] = 0;
+    }
+  }
+
+  return { total, detail };
+}

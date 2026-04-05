@@ -7,15 +7,17 @@ import {
   qrQueue,
   analyticsQueue,
   maintenanceQueue,
-  loggingQueue
+  loggingQueue,
+  getActiveWorkerCount
 } from '../services/queue.service';
+import { validateMalwareScanBody } from '../validators/url.validator';
 
 /**
- * Internal Security Check (Middleware would be better, but implementing here for completeness)
+ * Internal Security Check
  */
 const checkInternalAuth = (req: NextRequest) => {
   const authHeader = req.headers.get('x-internal-secret');
-  return authHeader === process.env.INTERNAL_API_SECRET || process.env.NODE_ENV === 'development';
+  return authHeader === process.env.INTERNAL_API_SECRET;
 };
 
 /**
@@ -53,10 +55,13 @@ export async function triggerMalwareScanHandler(req: NextRequest) {
   if (!checkInternalAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { url_id, long_url } = await req.json();
-    if (!url_id || !long_url) return NextResponse.json({ error: 'url_id and long_url are required' }, { status: 400 });
+    const body = await req.json();
 
-    await enqueueMalwareScan(url_id, long_url);
+    // ── Input validation ──
+    const validationError = validateMalwareScanBody(body);
+    if (validationError) return validationError;
+
+    await enqueueMalwareScan(body.url_id, body.long_url);
     return NextResponse.json({ message: 'Malware scan job enqueued' });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -76,14 +81,16 @@ export async function getQueueStatusHandler(req: NextRequest) {
       qrWaiting, 
       analyticsWaiting, 
       maintenanceWaiting, 
-      loggingWaiting
+      loggingWaiting,
+      workerInfo
     ] = await Promise.all([
       scanQueue.getWaitingCount(),
       linkCreationQueue.getWaitingCount(),
       qrQueue.getWaitingCount(),
       analyticsQueue.getWaitingCount(),
       maintenanceQueue.getWaitingCount(),
-      loggingQueue.getWaitingCount()
+      loggingQueue.getWaitingCount(),
+      getActiveWorkerCount()
     ]);
 
     return NextResponse.json({
@@ -95,7 +102,8 @@ export async function getQueueStatusHandler(req: NextRequest) {
         maintenance: maintenanceWaiting,
         logging: loggingWaiting
       },
-      active_workers: 6 // Total worker files implemented
+      active_workers: workerInfo.total,
+      worker_detail: workerInfo.detail
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,9 +1,10 @@
-﻿import { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { requireAuth } from '@/backend/src/utils/auth';
 import { createShortUrl } from '@/backend/src/services/url.service';
 import { checkAndIncrementUsage } from '@/backend/src/utils/queries/usage';
 import { listUrlsByUser } from '@/backend/src/utils/queries/urls';
+import { validateCreateUrl } from '@/backend/src/validators/url.validator';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -27,23 +28,10 @@ export async function POST(request: NextRequest) {
 
     // 3. Validate input
     const body = await request.json();
-    const { longUrl, expiryDate, customAlias } = body;
+    const validationError = validateCreateUrl(body);
+    if (validationError) return validationError;
 
-    if (!longUrl || typeof longUrl !== 'string') {
-      return Response.json(
-        { error: 'longUrl is required and must be a string' },
-        { status: 400 }
-      );
-    }
-
-    try {
-      new URL(longUrl);
-    } catch {
-      return Response.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
-    }
+    const { long_url: longUrl, expiry_date: expiryDate, custom_alias: customAlias } = body;
 
     const expiry = expiryDate ? new Date(expiryDate) : undefined;
     const url = await createShortUrl(longUrl, user.userId, customAlias, expiry);
@@ -53,14 +41,14 @@ export async function POST(request: NextRequest) {
       {
         message: 'Short URL created',
         url: {
-          urlId: url.id,
-          shortCode: url.short_code,
-          shortUrl,
-          longUrl: url.long_url,
-          createdAt: url.created_at,
-          expiryDate: url.expiry_date,
+          id: url.id,
+          short_code: url.short_code,
+          short_url: shortUrl,
+          long_url: url.long_url,
+          created_at: url.created_at,
+          expires_at: url.expiry_date,
           status: url.status,
-          safetyStatus: 'safe',
+          safety_status: 'safe',
         },
         rateLimit: {
           remaining: rateLimit.remaining,
@@ -69,10 +57,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('Create URL error:', error);
     return Response.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   } finally {
@@ -97,20 +85,20 @@ export async function GET(request: NextRequest) {
 
     return Response.json({
       urls: urls.map((u: Record<string, unknown>) => ({
-        urlId: u.url_id,
-        shortCode: u.short_code,
-        shortUrl: `${BASE_URL}/${u.short_code}`,
-        longUrl: u.long_url,
-        createdAt: u.created_at,
-        expiryDate: u.expiry_date,
-        maxClicks: u.max_clicks,
-        clickCount: u.click_count,
+        id: u.url_id,
+        short_code: u.short_code,
+        short_url: `${BASE_URL}/${u.short_code}`,
+        long_url: u.long_url,
+        created_at: u.created_at,
+        expires_at: u.expiry_date,
+        max_clicks: u.max_clicks,
+        click_count: u.click_count,
         status: u.status,
-        qrCodeUrl: u.qr_image_url,
+        qr_code_url: u.qr_image_url,
         stats: {
-          dailyClicks: (u.daily_clicks as number) || 0,
-          weeklyClicks: (u.weekly_clicks as number) || 0,
-          monthlyClicks: (u.monthly_clicks as number) || 0,
+          daily_clicks: (u.daily_clicks as number) || 0,
+          weekly_clicks: (u.weekly_clicks as number) || 0,
+          monthly_clicks: (u.monthly_clicks as number) || 0,
         },
       })),
       pagination: {
@@ -121,10 +109,10 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('List URLs error:', error);
     return Response.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   } finally {

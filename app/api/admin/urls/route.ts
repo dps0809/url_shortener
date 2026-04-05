@@ -1,4 +1,4 @@
-﻿import { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { requireAdmin } from '@/backend/src/utils/auth';
 import { listAllUrls } from '@/backend/src/utils/queries/urls';
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('Admin list URLs error:', error);
     return Response.json(
       { error: 'Internal server error' },

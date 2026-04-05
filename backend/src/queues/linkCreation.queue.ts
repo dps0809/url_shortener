@@ -20,4 +20,4 @@ export const linkCreationQueue = new Queue<LinkCreationQueueJobData>('linkCreati
   },
 });
 
-export const linkCreationQueueEvents = new QueueEvents('linkCreationQueue', { connection: redis });
+export const linkCreationQueueEvents = new QueueEvents('linkCreationQueue', { connection: redis.duplicate() });

@@ -36,7 +36,7 @@ export async function DELETE(
 
     return Response.json({ message: 'URL deleted successfully' });
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('Delete URL error:', error);
     return Response.json(
       { error: 'Internal server error' },

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "post api urls create short link with validation and rate limiting",
+    "description": "Test creating a new short URL with valid data and authorization, including optional custom alias and expiry date. Verify response contains short_url and expires_at. Also test creation with malicious URL is rejected with 400 error, and exceeding daily creation limit returns 429 rate limit error."
+  },
+  {
+    "id": "TC002",
+    "title": "get api urls list paginated for authenticated user",
+    "description": "Test retrieving paginated list of URLs for an authenticated user. Verify response contains array of URLs with id, short_code, long_url, and click_count. Test with and without pagination parameters."
+  },
+  {
+    "id": "TC003",
+    "title": "delete api urls id soft delete url and invalidate cache",
+    "description": "Test soft deleting a URL by ID with valid authorization. Verify response confirms deletion and cache invalidation occurs. Also test deleting non-existent URL returns 404, and unauthorized requests return 401."
+  },
+  {
+    "id": "TC004",
+    "title": "get short code redirect to original url with caching and rate limiting",
+    "description": "Test public GET request to short code endpoint redirects (302) to original long URL. Verify Redis caching is used on subsequent requests. Test expired or disabled links return 410 or 404 as appropriate. Test rate limiting returns 429 after threshold exceeded."
+  },
+  {
+    "id": "TC005",
+    "title": "get api urls id analytics total clicks with authorization",
+    "description": "Test retrieving total click count for a URL by ID with valid authorization. Verify response contains total_clicks number. Test unauthorized access returns 401."
+  },
+  {
+    "id": "TC006",
+    "title": "get api urls id analytics daily with date range filtering",
+    "description": "Test retrieving daily click statistics for a URL with optional startDate and endDate query parameters. Verify response is array of date and clicks objects. Test invalid date ranges or formats return 400 error. Test unauthorized access returns 401."
+  },
+  {
+    "id": "TC007",
+    "title": "patch api urls id disable temporarily disable link and clear cache",
+    "description": "Test disabling a URL by ID with valid authorization. Verify response confirms URL disabled and Redis cache is invalidated. Test disabling non-existent URL returns 404. Test unauthorized requests return 401."
+  },
+  {
+    "id": "TC008",
+    "title": "get api urls id qrcode return qr code image url",
+    "description": "Test retrieving QR code image URL for a short link by ID with valid authorization. Verify 200 response with qr_code URL if QR code is generated. Test 404 response if QR code is still generating. Test unauthorized access returns 401."
+  },
+  {
+    "id": "TC009",
+    "title": "get api health check system health status",
+    "description": "Test public health check endpoint returns 200 with database, redis, and workers status as healthy. Test scenario when a dependency is down returns 503 with error details."
+  },
+  {
+    "id": "TC010",
+    "title": "post api internal workers deadlink scan with internal secret",
+    "description": "Test triggering dead link scan job via internal API with valid x-internal-secret header. Verify 200 response confirming job enqueued. Test missing or invalid secret returns 401 Unauthorized."
+  }
+]

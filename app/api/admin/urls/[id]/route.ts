@@ -79,7 +79,7 @@ export async function PATCH(
       },
     });
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('Admin update URL error:', error);
     return Response.json(
       { error: 'Internal server error' },

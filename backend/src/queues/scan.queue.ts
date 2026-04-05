@@ -18,4 +18,4 @@ export const scanQueue = new Queue<ScanQueueJobData>('scanQueue', {
   },
 });
 
-export const scanQueueEvents = new QueueEvents('scanQueue', { connection: redis });
+export const scanQueueEvents = new QueueEvents('scanQueue', { connection: redis.duplicate() });

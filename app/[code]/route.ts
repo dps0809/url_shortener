@@ -1,7 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { getCache, setCache } from '@/backend/src/utils/redis';
-import { redirect } from 'next/navigation';
 import { UAParser } from 'ua-parser-js';
 import { getUrlForRedirect, incrementClickCount, updateUrlStatus } from '@/backend/src/utils/queries/urls';
 import { insertClick } from '@/backend/src/utils/queries/clicks';
@@ -23,7 +22,7 @@ export async function GET(
     if (cachedUrl) {
       // Log click asynchronously (don't block redirect)
       logClick(request, code).catch(console.error);
-      return redirect(cachedUrl);
+      return NextResponse.redirect(cachedUrl, 302);
     }
 
     // 2. Cache miss — query database
@@ -71,7 +70,7 @@ export async function GET(
       logClick(request, code).catch(console.error);
 
       // 6. Redirect
-      return redirect(url.long_url);
+      return NextResponse.redirect(url.long_url, 302);
     } finally {
       client.release();
     }

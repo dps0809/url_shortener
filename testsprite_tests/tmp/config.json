@@ -1,17 +1,20 @@
 {
-  "status": "init",
-  "scope": "codebase",
+  "status": "commited",
   "type": "backend",
-  "localEndpoint": "http://localhost:3000/",
-  "serverPort": 50616,
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "backendAuthType": "Bearer token",
+  "backendCredential": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxIiwic2Vzc2lvbklkIjoiZjE1MmUxOGQtZTAyZi00MTI4LWJiMTUtOTdjODhhNzRjNjAwIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzUzNzIzNjUsImV4cCI6MTc3NTk3NzE2NX0.Vm8pkMW42ejvUiU8tZQ2IF3z8W-Cs0F1NFCgGGGSZ4Q",
   "executionArgs": {
     "projectName": "url_shortener",
     "projectPath": "c:\\Coding\\url_shortener",
     "testIds": [],
-    "additionalInstruction": "Verify the 21 API endpoints implemented in backend/src/app (mapped from backend/src/routes). Ensure createUrl follows the scan-first pipeline, and redirection handles Redis caching.",
+    "additionalInstruction": "",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-qGYNULWnY2TT0mE6KjP9BY1F0CHf0y1rxYqAecJI8oieSt7YiH1qhO65Iztlbpvj9WCc14azFHT3-Sjd4CRLUJS2Wv89SazDNPn586RQVVofVOQXsAzbLRfQTXF_kCoWyQA"
     }
-  }
+  },
+  "serverPort": 53850,
+  "proxy": "http://54429fbe-2705-46b3-a940-a963dfaf1b48:TY1mW7vGPE22BN0SdBx7ilB5v5wTg3OD@tun.testsprite.com:8080"
 }

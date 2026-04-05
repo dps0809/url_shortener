@@ -17,4 +17,4 @@ export const maintenanceQueue = new Queue<MaintenanceQueueJobData>('maintenanceQ
   },
 });
 
-export const maintenanceQueueEvents = new QueueEvents('maintenanceQueue', { connection: redis });
+export const maintenanceQueueEvents = new QueueEvents('maintenanceQueue', { connection: redis.duplicate() });

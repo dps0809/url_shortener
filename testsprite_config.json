@@ -34,8 +34,8 @@
     }
   ],
   "auth": {
-    "type": "NONE",
-    "note": "Public creation enabled for short-term testing. If production auth is added, provide JWT here."
+    "type": "JWT",
+    "note": "Production endpoints require a valid Bearer JWT. Health check and redirects remain public."
   },
   "environments": {
     "local": {

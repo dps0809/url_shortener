@@ -26,3 +26,10 @@ export const getRemainingQuota = async (userId: number): Promise<number> => {
   const used = current ? parseInt(current, 10) : 0;
   return Math.max(0, 50 - used);
 };
+
+export const getRemainingRedirectQuota = async (ipAddress: string): Promise<number> => {
+  const key = `ratelimit:redirect:${ipAddress}`;
+  const current = await redis.get(key);
+  const used = current ? parseInt(current, 10) : 0;
+  return Math.max(0, 20 - used);
+};

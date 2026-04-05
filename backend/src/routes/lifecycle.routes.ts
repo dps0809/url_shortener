@@ -6,12 +6,22 @@ import {
 } from '../services/url.service';
 import { getUrlById } from '../models/url.model';
 import { delCache } from '../utils/redis';
+import { withAuth, isAuthError } from '../middleware/auth.middleware';
+import { validateIdParam, validateUpdateExpiry } from '../validators/url.validator';
 
 /**
  * 10. GET /urls/:id/status - Check link state
  */
 export async function getStatusHandler(req: NextRequest, { params }: { params: { id: string } }) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
   const id = parseInt(params.id);
+
   try {
     const url = await getUrlById(id);
     if (!url) return NextResponse.json({ error: 'URL not found' }, { status: 404 });
@@ -29,7 +39,15 @@ export async function getStatusHandler(req: NextRequest, { params }: { params: {
  * 11. PATCH /urls/:id/disable - Temporarily disable a link
  */
 export async function disableUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
   const id = parseInt(params.id);
+
   try {
     const url = await getUrlById(id);
     if (!url) return NextResponse.json({ error: 'URL not found' }, { status: 404 });
@@ -47,7 +65,15 @@ export async function disableUrlHandler(req: NextRequest, { params }: { params: 
  * 12. PATCH /urls/:id/enable - Re-enable a disabled link
  */
 export async function enableUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
   const id = parseInt(params.id);
+
   try {
     const url = await getUrlById(id);
     if (!url) return NextResponse.json({ error: 'URL not found' }, { status: 404 });
@@ -65,14 +91,24 @@ export async function enableUrlHandler(req: NextRequest, { params }: { params: {
  * 13. PATCH /urls/:id/extend - Extend expiration time
  */
 export async function extendUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
-  try {
-    const { expiry_date } = await req.json();
-    if (!expiry_date) return NextResponse.json({ error: 'expiry_date is required' }, { status: 400 });
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
 
-    const updated = await updateExpiry(id, new Date(expiry_date));
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
+  const id = parseInt(params.id);
+
+  try {
+    const body = await req.json();
+
+    // ── Input validation ──
+    const validationError = validateUpdateExpiry(body);
+    if (validationError) return validationError;
+
+    const updated = await updateExpiry(id, new Date(body.expiry_date));
     if (updated) {
-      // Redis TTL is updated on next redirect fetch or manually here if needed
       await delCache(`short:${updated.short_code}`);
     }
 

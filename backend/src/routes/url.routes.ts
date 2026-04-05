@@ -10,18 +10,31 @@ import { getUrlById, getUrlByShortCode } from '../models/url.model';
 import { getCache, setCache, incrCounter, delCache } from '../utils/redis';
 import { enqueueAnalyticsSync } from '../services/queue.service';
 import { checkRedirectLimit } from '../services/rateLimit.service';
+import { withAuth, isAuthError } from '../middleware/auth.middleware';
+import { 
+  validateCreateUrl, 
+  validateUpdateExpiry, 
+  validateIdParam, 
+  validatePagination 
+} from '../validators/url.validator';
 
 /**
  * 1. POST /urls - Create a new short link
  */
 export async function createUrlHandler(req: NextRequest) {
-  try {
-    const { long_url, custom_alias, expiry_date } = await req.json();
-    const userId = 1; // Mock user ID for now
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+  const userId = authResult.userId;
 
-    if (!long_url) {
-      return NextResponse.json({ error: 'long_url is required' }, { status: 400 });
-    }
+  try {
+    const body = await req.json();
+
+    // ── Input validation ──
+    const validationError = validateCreateUrl(body);
+    if (validationError) return validationError;
+
+    const { long_url, custom_alias, expiry_date } = body;
 
     const urlRecord = await createShortUrl(
       long_url, 
@@ -43,11 +56,20 @@ export async function createUrlHandler(req: NextRequest) {
  * 2. GET /urls - Return all links for user
  */
 export async function listUrlsHandler(req: NextRequest) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+  const userId = authResult.userId;
+
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const offset = (page - 1) * limit;
-  const userId = 1; // Mock user ID
+
+  // ── Pagination validation ──
+  const pagination = validatePagination(
+    searchParams.get('page'),
+    searchParams.get('limit')
+  );
+  if (pagination instanceof NextResponse) return pagination;
+  const { limit, offset } = pagination;
 
   try {
     const urls = await getUserUrls(userId, limit, offset);
@@ -66,7 +88,15 @@ export async function listUrlsHandler(req: NextRequest) {
  * 3. GET /urls/:id - Fetch single link details
  */
 export async function getUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
   const id = parseInt(params.id);
+
   try {
     const url = await getUrlById(id);
     if (!url) return NextResponse.json({ error: 'URL not found' }, { status: 404 });
@@ -86,12 +116,23 @@ export async function getUrlHandler(req: NextRequest, { params }: { params: { id
  * 4. PATCH /urls/:id - Update link settings
  */
 export async function updateUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
-  try {
-    const { expiry_date } = await req.json();
-    if (!expiry_date) return NextResponse.json({ error: 'expiry_date is required' }, { status: 400 });
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
 
-    const updated = await updateExpiry(id, new Date(expiry_date));
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
+  const id = parseInt(params.id);
+
+  try {
+    const body = await req.json();
+
+    // ── Input validation ──
+    const validationError = validateUpdateExpiry(body);
+    if (validationError) return validationError;
+
+    const updated = await updateExpiry(id, new Date(body.expiry_date));
     
     // Invalidate Redis cache
     if (updated) {
@@ -108,7 +149,15 @@ export async function updateUrlHandler(req: NextRequest, { params }: { params: {
  * 5. DELETE /urls/:id - Soft delete a link
  */
 export async function deleteUrlHandler(req: NextRequest, { params }: { params: { id: string } }) {
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+
+  // ── Param validation ──
+  const idError = validateIdParam(params.id);
+  if (idError) return idError;
   const id = parseInt(params.id);
+
   try {
     const url = await getUrlById(id);
     if (!url) return NextResponse.json({ error: 'URL not found' }, { status: 404 });
@@ -124,6 +173,7 @@ export async function deleteUrlHandler(req: NextRequest, { params }: { params: {
 
 /**
  * 6. GET /:short_code - Redirect to original URL
+ * NOTE: Redirect is a public endpoint — no auth required.
  */
 export async function redirectHandler(req: NextRequest, { params }: { params: { short_code: string } }) {
   const code = params.short_code;

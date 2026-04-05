@@ -88,7 +88,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    if (error instanceof Response) throw error;
+    if (error instanceof Response) return error;
     console.error('Stats error:', error);
     return Response.json(
       { error: 'Internal server error' },

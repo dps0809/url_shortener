@@ -1,14 +1,9 @@
-import { Job } from 'bullmq';
-import { getUrlsByUser, updateExpiryDate, disableUrl as disableUrlModel, enableUrl as enableUrlModel, softDeleteUrl, checkShortCodeExists, UrlRecord } from '../models/url.model';
-import { 
-  enqueueScanJob, 
-  scanQueueEvents, 
-  enqueueLinkCreationJob, 
-  linkCreationQueueEvents,
-  ScanQueueJobData,
-  LinkCreationQueueJobData
-} from './queue.service';
+import { getUrlsByUser, updateExpiryDate, disableUrl as disableUrlModel, enableUrl as enableUrlModel, softDeleteUrl, checkShortCodeExists, createUrl, UrlRecord } from '../models/url.model';
+import { qrQueue } from '../queues/qr.queue';
+import { analyticsQueue } from '../queues/analytics.queue';
+import { loggingQueue } from '../queues/logging.queue';
 import { checkCreationLimit } from './rateLimit.service';
+import { scanUrl } from './scan.service';
 
 import { customAlphabet } from 'nanoid';
 
@@ -23,40 +18,51 @@ const generateUniqueShortCode = async (): Promise<string> => {
 }
 
 export const createShortUrl = async (longUrl: string, userId: number, customAlias?: string, expiryDate?: Date) => {
-  // 1. Pre-validation
+  console.time('[createShortUrl] total');
+
+  // 1. Pre-validation: rate limit
+  console.time('[createShortUrl] rateLimit');
   const isAllowed = await checkCreationLimit(userId);
   if (!isAllowed) throw new Error('Rate limit exceeded');
+  console.timeEnd('[createShortUrl] rateLimit');
 
   if (customAlias) {
     const isAvailable = await checkAliasAvailability(customAlias);
     if (!isAvailable) throw new Error('Alias already in use');
   }
 
-  // 2. Step 1: Malicious Scan
-  const scanJobData: ScanQueueJobData = {
-    longUrl,
-    userId,
-    customAlias,
-    expiryDate: expiryDate ? expiryDate.toISOString() : undefined,
-  };
+  // 2. DIRECT malware scan (no BullMQ overhead)
+  console.time('[createShortUrl] scanUrl');
+  const scanResult = await scanUrl(longUrl);
+  console.timeEnd('[createShortUrl] scanUrl');
 
-  const scanJob: Job = await enqueueScanJob(scanJobData);
-  const scanResult = await scanJob.waitUntilFinished(scanQueueEvents) as { result: string; provider: string };
+  if (scanResult.result !== 'safe') {
+    throw new Error(`URL blocked: ${scanResult.result} (provider: ${scanResult.provider})`);
+  }
 
-  // 3. Step 2: Database Creation
+  // 3. DIRECT database insert (no BullMQ overhead)
+  console.time('[createShortUrl] dbInsert');
   const shortCode = customAlias || (await generateUniqueShortCode());
-  const creationData: LinkCreationQueueJobData = {
-    longUrl,
+  const expiry = expiryDate || null;
+  const urlRecord = await createUrl(shortCode, longUrl, userId, expiry);
+  if (!urlRecord) throw new Error('Failed to create URL record in DB');
+  console.timeEnd('[createShortUrl] dbInsert');
+
+  // 4. ASYNC fan-out (fire-and-forget via BullMQ — these don't block)
+  const urlId = urlRecord.url_id ?? urlRecord.id;
+  qrQueue.add('generate', { urlId, shortCode: urlRecord.short_code }).catch(e => console.error('QR enqueue failed:', e));
+  analyticsQueue.add('setup', { urlId, shortCode: urlRecord.short_code }).catch(e => console.error('Analytics enqueue failed:', e));
+  loggingQueue.add('log', {
+    action: 'URL_CREATED',
     userId,
-    shortCode,
-    expiryDate: expiryDate ? expiryDate.toISOString() : undefined,
+    urlId,
+    shortCode: urlRecord.short_code,
+    longUrl: urlRecord.long_url,
     provider: scanResult.provider,
     scanResult: scanResult.result,
-  };
+  }).catch(e => console.error('Logging enqueue failed:', e));
 
-  const creationJob: Job = await enqueueLinkCreationJob(creationData);
-  const urlRecord = (await creationJob.waitUntilFinished(linkCreationQueueEvents)) as UrlRecord;
-
+  console.timeEnd('[createShortUrl] total');
   return urlRecord;
 };
 

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSystemMetrics } from '../services/metrics.service';
-import { getRemainingQuota } from '../services/rateLimit.service';
+import { getActiveWorkerCount } from '../services/queue.service';
+import { getRemainingQuota, getRemainingRedirectQuota } from '../services/rateLimit.service';
 import pool from '../utils/db';
 import { redis } from '../utils/redis';
+import { withAuth, isAuthError } from '../middleware/auth.middleware';
 
 /**
  * 15. GET /health - Check system health
+ * NOTE: Health check is public — no auth required.
  */
 export async function healthCheckHandler() {
   try {
@@ -17,10 +20,15 @@ export async function healthCheckHandler() {
     await redis.ping();
     const redisStatus = 'healthy';
 
+    // Check Workers
+    const workerInfo = await getActiveWorkerCount();
+    const workersStatus = workerInfo.total > 0 ? 'healthy' : 'degraded';
+
     return NextResponse.json({
       database: dbStatus,
       redis: redisStatus,
-      workers: 'running' // Simplified check
+      workers: workersStatus,
+      worker_detail: workerInfo.detail
     });
   } catch (error: any) {
     return NextResponse.json({
@@ -51,12 +59,23 @@ export async function getMetricsHandler() {
  * 17. GET /rate-limit - Show remaining quota
  */
 export async function getRateLimitHandler(req: NextRequest) {
-  const userId = 1; // Mock user
+  // ── Auth gate ──
+  const authResult = await withAuth(req);
+  if (isAuthError(authResult)) return authResult;
+  const userId = authResult.userId;
+
+  // Extract IP for redirect quota
+  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+
   try {
-    const remaining = await getRemainingQuota(userId);
+    const [creationsRemaining, redirectsRemaining] = await Promise.all([
+      getRemainingQuota(userId),
+      getRemainingRedirectQuota(ipAddress)
+    ]);
+
     return NextResponse.json({
-      creations_remaining: remaining,
-      redirects_remaining: 100 // Example static value or fetch from Redis
+      creations_remaining: creationsRemaining,
+      redirects_remaining: redirectsRemaining
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
