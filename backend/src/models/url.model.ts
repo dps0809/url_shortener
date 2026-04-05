@@ -1,12 +1,14 @@
 import { query } from '../utils/db';
 
 export interface UrlRecord {
-  id: number;
+  id: number;       // alias for url_id in code
+  url_id: number;   // actual PK column name
   short_code: string;
   long_url: string;
   user_id: number;
   click_count: number;
   expiry_date: Date | null;
+  max_clicks: number | null;
   status: 'active' | 'disabled' | 'expired' | 'malicious' | 'dead';
   is_deleted: boolean;
   created_at: Date;
@@ -34,7 +36,7 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlRecord | 
 
 export const getUrlById = async (id: number): Promise<UrlRecord | null> => {
   const result = await query<UrlRecord>(
-    `SELECT * FROM urls WHERE id = $1`,
+    `SELECT *, url_id as id FROM urls WHERE url_id = $1`,
     [id]
   );
   return result.rows[0] || null;
@@ -55,8 +57,8 @@ export const updateExpiryDate = async (id: number, expiryDate: Date): Promise<Ur
   const result = await query<UrlRecord>(
     `UPDATE urls
      SET expiry_date = $1
-     WHERE id = $2
-     RETURNING *`,
+     WHERE url_id = $2
+     RETURNING *, url_id as id`,
     [expiryDate, id]
   );
   return result.rows[0] || null;
@@ -64,21 +66,21 @@ export const updateExpiryDate = async (id: number, expiryDate: Date): Promise<Ur
 
 export const disableUrl = async (id: number): Promise<void> => {
   await query(
-    `UPDATE urls SET status = 'disabled' WHERE id = $1`,
+    `UPDATE urls SET status = 'disabled' WHERE url_id = $1`,
     [id]
   );
 };
 
 export const enableUrl = async (id: number): Promise<void> => {
   await query(
-    `UPDATE urls SET status = 'active' WHERE id = $1`,
+    `UPDATE urls SET status = 'active' WHERE url_id = $1`,
     [id]
   );
 };
 
 export const softDeleteUrl = async (id: number): Promise<void> => {
   await query(
-    `UPDATE urls SET is_deleted = true WHERE id = $1`,
+    `UPDATE urls SET is_deleted = true WHERE url_id = $1`,
     [id]
   );
 };
@@ -94,7 +96,7 @@ export const incrementClickCount = async (shortCode: string, incrementBy: number
 
 export const getExpiredUrls = async (): Promise<{ id: number }[]> => {
   const result = await query<{ id: number }>(
-    `SELECT id FROM urls
+    `SELECT url_id as id FROM urls
      WHERE expiry_date < NOW() AND status = 'active'`
   );
   return result.rows;
@@ -102,22 +104,22 @@ export const getExpiredUrls = async (): Promise<{ id: number }[]> => {
 
 export const markUrlExpired = async (id: number): Promise<void> => {
   await query(
-    `UPDATE urls SET status = 'expired' WHERE id = $1`,
+    `UPDATE urls SET status = 'expired' WHERE url_id = $1`,
     [id]
   );
 };
 
 export const checkShortCodeExists = async (code: string): Promise<boolean> => {
-  const result = await query<{ id: number }>(
-    `SELECT id FROM urls WHERE short_code = $1 LIMIT 1`,
+  const result = await query<{ url_id: number }>(
+    `SELECT url_id FROM urls WHERE short_code = $1 LIMIT 1`,
     [code]
   );
   return result.rowCount !== null && result.rowCount > 0;
 };
 
 export const checkUrlOwnership = async (id: number, userId: number): Promise<boolean> => {
-  const result = await query<{ id: number }>(
-    `SELECT id FROM urls WHERE id = $1 AND user_id = $2`,
+  const result = await query<{ url_id: number }>(
+    `SELECT url_id FROM urls WHERE url_id = $1 AND user_id = $2`,
     [id, userId]
   );
   return result.rowCount !== null && result.rowCount > 0;
@@ -125,7 +127,7 @@ export const checkUrlOwnership = async (id: number, userId: number): Promise<boo
 
 export const getActiveUrls = async (limit: number = 1000, offset: number = 0): Promise<{ id: number; long_url: string }[]> => {
   const result = await query<{ id: number; long_url: string }>(
-    `SELECT id, long_url FROM urls
+    `SELECT url_id as id, long_url FROM urls
      WHERE status = 'active'
      LIMIT $1 OFFSET $2`,
     [limit, offset]

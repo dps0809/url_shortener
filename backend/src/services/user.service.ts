@@ -14,7 +14,7 @@ export const loginUser = async (email: string, passwordPlain: string) => {
   if (!user) throw new Error('Invalid credentials');
   if (!user.is_active) throw new Error('User is disabled');
   
-  const isValid = await bcrypt.compare(passwordPlain, user.password_hash);
+  const isValid = await bcrypt.compare(passwordPlain, user.password_h);
   if (!isValid) throw new Error('Invalid credentials');
   
   return user;

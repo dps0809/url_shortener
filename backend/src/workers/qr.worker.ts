@@ -12,7 +12,10 @@ export const qrWorker = new Worker(
     const url = await getUrlById(urlId);
     if (!url) throw new Error('URL not found');
 
-    await generateQRCode(urlId, url.long_url);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const shortUrl = `${baseUrl}/${url.short_code}`;
+
+    await generateQRCode(urlId, shortUrl);
 
     return { ok: true };
   },

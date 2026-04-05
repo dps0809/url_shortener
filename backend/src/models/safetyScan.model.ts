@@ -28,7 +28,7 @@ export const getScanHistory = async (urlId: number): Promise<SafetyScanRecord[]>
 
 export const markUrlAsMalicious = async (urlId: number): Promise<void> => {
   await query(
-    `UPDATE urls SET status = 'malicious' WHERE id = $1`,
+    `UPDATE urls SET status = 'malicious' WHERE url_id = $1`,
     [urlId]
   );
 };

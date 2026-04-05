@@ -19,7 +19,7 @@ export const insertClickLog = async (urlId: number, country: string | null, devi
 
 export const getTotalClicks = async (urlId: number): Promise<number> => {
   const result = await query<{ click_count: number }>(
-    `SELECT click_count FROM urls WHERE id = $1`,
+    `SELECT click_count FROM urls WHERE url_id = $1`,
     [urlId]
   );
   return result.rows[0]?.click_count || 0;

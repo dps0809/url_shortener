@@ -9,7 +9,7 @@ export const checkExpiredUrls = async () => {
     await markExpiredUrl(url.id);
     
     // Also fetch shortCode to clear cache
-    const urlData = await query(`SELECT short_code FROM urls WHERE id = $1`, [url.id]);
+    const urlData = await query(`SELECT short_code FROM urls WHERE url_id = $1`, [url.id]);
     if (urlData.rows[0]) {
        await clearExpiredCache(urlData.rows[0].short_code);
     }

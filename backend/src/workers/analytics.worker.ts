@@ -8,6 +8,8 @@ import { insertClickLog } from '../models/click.model';
 import { initUrlStats } from '../utils/queries/stats';
 import { syncClickCounters } from '../services/worker.service';
 
+import { UAParser } from 'ua-parser-js';
+
 // 1. Worker for individual analytics setup and click logging (analyticsQueue)
 export const analyticsWorker = new Worker(
   'analyticsQueue',
@@ -30,7 +32,10 @@ export const analyticsWorker = new Worker(
     const url = await getUrlByShortCode(click.shortCode);
     if (!url) return { ok: true, ignored: true };
 
-    const device = click.userAgent ? (click.userAgent.includes('Mobile') ? 'mobile' : 'desktop') : null;
+    const parser = new UAParser(click.userAgent);
+    const uaResult = parser.getResult();
+    const device = uaResult.device.type || 'desktop'; // mobile, tablet, etc.
+
     await insertClickLog(url.id, null, device, click.ipAddress);
 
     return { ok: true };

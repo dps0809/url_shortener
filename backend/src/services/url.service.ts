@@ -10,17 +10,16 @@ import {
 } from './queue.service';
 import { checkCreationLimit } from './rateLimit.service';
 
-function generateCandidateCode(): string {
-  return Math.random().toString(36).substring(2, 8);
-}
+import { customAlphabet } from 'nanoid';
 
-async function generateUniqueShortCode(): Promise<string> {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const code = generateCandidateCode();
+const generateUniqueShortCode = async (): Promise<string> => {
+  const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = nanoid();
     const exists = await checkShortCodeExists(code);
     if (!exists) return code;
   }
-  throw new Error('Failed to generate unique short code');
+  throw new Error('Failed to generate unique short code after 10 attempts');
 }
 
 export const createShortUrl = async (longUrl: string, userId: number, customAlias?: string, expiryDate?: Date) => {
@@ -42,8 +41,7 @@ export const createShortUrl = async (longUrl: string, userId: number, customAlia
   };
 
   const scanJob: Job = await enqueueScanJob(scanJobData);
-  const scanResult = await scanJob.waitUntilFinished(scanQueueEvents);
-  // scan.worker throws if malicious, so if we reach here, it is safe.
+  const scanResult = await scanJob.waitUntilFinished(scanQueueEvents) as { result: string; provider: string };
 
   // 3. Step 2: Database Creation
   const shortCode = customAlias || (await generateUniqueShortCode());
@@ -52,14 +50,13 @@ export const createShortUrl = async (longUrl: string, userId: number, customAlia
     userId,
     shortCode,
     expiryDate: expiryDate ? expiryDate.toISOString() : undefined,
-    provider: (scanResult as any).provider,
-    scanResult: (scanResult as any).result,
+    provider: scanResult.provider,
+    scanResult: scanResult.result,
   };
 
   const creationJob: Job = await enqueueLinkCreationJob(creationData);
   const urlRecord = (await creationJob.waitUntilFinished(linkCreationQueueEvents)) as UrlRecord;
 
-  // 4. Return to User
   return urlRecord;
 };
 

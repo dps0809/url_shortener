@@ -3,5 +3,15 @@
   "scope": "codebase",
   "type": "backend",
   "localEndpoint": "http://localhost:3000/",
-  "serverPort": 64392
+  "serverPort": 50616,
+  "executionArgs": {
+    "projectName": "url_shortener",
+    "projectPath": "c:\\Coding\\url_shortener",
+    "testIds": [],
+    "additionalInstruction": "Verify the 21 API endpoints implemented in backend/src/app (mapped from backend/src/routes). Ensure createUrl follows the scan-first pipeline, and redirection handles Redis caching.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-qGYNULWnY2TT0mE6KjP9BY1F0CHf0y1rxYqAecJI8oieSt7YiH1qhO65Iztlbpvj9WCc14azFHT3-Sjd4CRLUJS2Wv89SazDNPn586RQVVofVOQXsAzbLRfQTXF_kCoWyQA"
+    }
+  }
 }

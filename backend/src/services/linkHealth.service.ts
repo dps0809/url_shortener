@@ -12,7 +12,7 @@ export const checkLinkHealth = async () => {
 };
 
 export const markDeadLink = async (urlId: number) => {
-  await query(`UPDATE urls SET status = 'dead' WHERE id = $1`, [urlId]);
+  await query(`UPDATE urls SET status = 'dead' WHERE url_id = $1`, [urlId]);
 };
 
 export const updateHealthStatus = async (urlId: number, status: string) => {

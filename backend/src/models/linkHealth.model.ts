@@ -28,7 +28,7 @@ export const updateLinkHealth = async (urlId: number, lastStatusCode: number | n
 
 export const markUrlDead = async (urlId: number): Promise<void> => {
   await query(
-    `UPDATE urls SET status = 'dead' WHERE id = $1`,
+    `UPDATE urls SET status = 'dead' WHERE url_id = $1`,
     [urlId]
   );
 };
