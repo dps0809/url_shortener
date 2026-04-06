@@ -23,7 +23,7 @@ export async function getTotalClicksHandler(req: NextRequest, { params }: { para
 
   try {
     const total_clicks = await getTotalClicks(id);
-    return NextResponse.json({ total_clicks });
+    return NextResponse.json({ total_clicks: Number(total_clicks) });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -43,12 +43,28 @@ export async function getDailyAnalyticsHandler(req: NextRequest, { params }: { p
   const id = parseInt(params.id);
 
   const { searchParams } = new URL(req.url);
-  const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : new Date();
+  const sDateStr = searchParams.get('startDate');
+  const eDateStr = searchParams.get('endDate');
 
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return NextResponse.json({ error: 'startDate and endDate must be valid ISO date strings' }, { status: 400 });
+  // Strict check for Feb 30 etc.
+  const isValidDate = (dStr: string | null) => {
+    if (!dStr) return true;
+    const d = new Date(dStr);
+    if (isNaN(d.getTime())) return false;
+    // Check if components actually match to prevent rollover (e.g. Feb 30 -> Mar 2)
+    const [year, month, day] = dStr.split('-').map(Number);
+    if (year && month && day) {
+        return d.getUTCFullYear() === year && (d.getUTCMonth() + 1) === month && d.getUTCDate() === day;
+    }
+    return true;
+  };
+
+  if (!isValidDate(sDateStr) || !isValidDate(eDateStr)) {
+    return NextResponse.json({ error: 'startDate and endDate must be valid calendar dates' }, { status: 400 });
   }
+
+  const startDate = sDateStr ? new Date(sDateStr) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const endDate = eDateStr ? new Date(eDateStr) : new Date();
 
   if (startDate > endDate) {
     return NextResponse.json({ error: 'startDate must be before endDate' }, { status: 400 });

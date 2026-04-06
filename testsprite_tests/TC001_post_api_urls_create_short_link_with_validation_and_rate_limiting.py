@@ -2,125 +2,94 @@ import requests
 from datetime import datetime, timedelta
 
 BASE_URL = "http://localhost:3000"
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxIiwic2Vzc2lvbklkIjoiZjE1MmUxOGQtZTAyZi00MTI4LWJiMTUtOTdjODhhNzRjNjAwIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzUzNzIzNjUsImV4cCI6MTc3NTk3NzE2NX0.Vm8pkMW42ejvUiU8tZQ2IF3z8W-Cs0F1NFCgGGGSZ4Q"
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0Iiwic2Vzc2lvbklkIjoiNzMzYmY0YTUtNmQ0OC00OGY0LTg2NWUtNjY4NzNlODg5YmZhIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzU0MTU5NjksImV4cCI6MTc3NjAyMDc2OX0.Rcsxoe18UGGeY1FI8hgnz2HWUoD5o72D_V86bMEuMeo"
+
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
     "Content-Type": "application/json"
 }
-TIMEOUT = 30
-
 
 def test_post_api_urls_create_short_link_with_validation_and_rate_limiting():
-    created_url_ids = []
+    # Prepare valid data with optional custom alias and expiry date
+    expiry_date_iso = (datetime.utcnow() + timedelta(days=7)).replace(microsecond=0).isoformat() + "Z"
+    valid_payload = {
+        "long_url": "https://example.com/some/valid/path",
+        "custom_alias": "customalias123",
+        "expiry_date": expiry_date_iso
+    }
 
+    created_url_id = None
     try:
-        # 1) Create a valid short URL with optional customAlias and expiryDate
-        expiry_date = (datetime.utcnow() + timedelta(days=7)).isoformat() + "Z"
-        payload_valid = {
-            "long_url": "https://www.example.com/test-path",
-            "custom_alias": "customalias123",
-            "expiry_date": expiry_date
-        }
-        resp = requests.post(
+        # Test creating a new short URL with valid data and authorization
+        response = requests.post(
             f"{BASE_URL}/api/urls",
-            json=payload_valid,
             headers=HEADERS,
-            timeout=TIMEOUT
+            json=valid_payload,
+            timeout=30
         )
-        assert resp.status_code == 201, f"Expected 201 Created, got {resp.status_code}"
-        json_data = resp.json()
-        # Validate response contains short_url and expires_at (expires_at may be null or ISO string)
-        assert "short_url" in json_data, "Response missing 'short_url'"
-        assert "expires_at" in json_data, "Response missing 'expires_at'"
-        assert isinstance(json_data["short_url"], str) and json_data["short_url"], "'short_url' is not a valid string"
-        assert (json_data["expires_at"] is None) or isinstance(json_data["expires_at"], str), "'expires_at' is not string or null"
-        # Extract URL ID for cleanup - calling GET /api/urls to find by short_url (no direct id returned)
-        # The PRD response schema mentions urlId returned but example shows short_url and expires_at only,
-        # So attempt to retrieve ID via listing with filtering is not possible here.
-        # As workaround, create a second URL without optional fields and delete it by short_code via GET /api/urls.
-        # Or ignore explicit deletion (not specified for this test) - but instruction says delete resource after test done.
-        # We assume short_url is the full URL like "http://localhost:3000/abc123"
-        short_code = json_data["short_url"].rstrip("/").rsplit("/", 1)[-1]
+        assert response.status_code == 201, f"Expected 201 Created, got {response.status_code}"
+        json_resp = response.json()
+        assert "short_url" in json_resp, "Response missing 'short_url'"
+        assert "expires_at" in json_resp, "Response missing 'expires_at'"
+        # expires_at may be null or string ISO; validate if present is string
+        assert (json_resp["expires_at"] is None) or isinstance(json_resp["expires_at"], str), "'expires_at' should be string or null"
+        # Extract urlId for cleanup and further tests - from returned short_url or response
+        # Since schema in PRD says response is { short_url, expires_at }, we don't have urlId here
+        # To delete or track, we need urlId from GET api/urls list or created resource
+        # We'll get it from the paginated list filtered by custom alias:
+        params = {"page":1,"limit":20}
+        list_resp = requests.get(f"{BASE_URL}/api/urls", headers=HEADERS, params=params, timeout=30)
+        assert list_resp.status_code == 200, f"Failed to get URLs list after creation, status {list_resp.status_code}"
+        urls = list_resp.json()
+        matching = [u for u in urls if u.get("short_code") == valid_payload["custom_alias"]]
+        assert len(matching) > 0, "Created short URL not found in list"
+        created_url_id = matching[0].get("id")
+        assert created_url_id is not None, "Created URL id not found"
 
-        # Fetch all URLs to find ID matching short_code
-        list_resp = requests.get(
-            f"{BASE_URL}/api/urls?page=1&limit=100",
-            headers=HEADERS,
-            timeout=TIMEOUT,
-        )
-        assert list_resp.status_code == 200, f"Expected 200 for list URLs, got {list_resp.status_code}"
-        urls_list = list_resp.json()
-        matched_url = next((u for u in urls_list if u.get("short_code") == short_code), None)
-        assert matched_url is not None, "Created short URL not found in user's URL list"
-        url_id = matched_url.get("id")
-        assert url_id is not None, "URL id not found"
-
-        created_url_ids.append(url_id)
-
-        # 2) Attempt creation with malicious URL - expect 400 Validation error
+        # Test creation with malicious URL rejected with 400 error
         malicious_payload = {
-            "long_url": "http://malicious.example.com/badcontent"
+            "long_url": "http://malicious.example.com/phishing",
         }
-        resp_bad = requests.post(
+        malicious_resp = requests.post(
             f"{BASE_URL}/api/urls",
-            json=malicious_payload,
             headers=HEADERS,
-            timeout=TIMEOUT
+            json=malicious_payload,
+            timeout=30
         )
-        assert resp_bad.status_code == 400, f"Expected 400 Bad Request for malicious URL, got {resp_bad.status_code}"
+        assert malicious_resp.status_code == 400, f"Expected 400 for malicious URL, got {malicious_resp.status_code}"
 
-        # 3) Exceeding daily creation limit - simulate by repeatedly creating URLs until 429 hit
-        # We'll limit attempts to 50 to avoid endless loop, assuming limit < 50
-        max_attempts = 50
-        hit_rate_limit = False
-        for i in range(max_attempts):
-            payload = {
-                "long_url": f"https://example.com/rate-limit-test-{i}"
+        # Test exceeding daily creation limit returns 429 rate limit error
+        # We have to create URLs repeatedly until the limit is hit
+        # We do this carefully to avoid infinite loops
+        for _ in range(100):  # some large number to exceed limit (limit unknown)
+            test_payload = {
+                "long_url": "https://example.com/rate_limit_test_" + str(datetime.utcnow().timestamp())
             }
-            r = requests.post(
+            rate_resp = requests.post(
                 f"{BASE_URL}/api/urls",
-                json=payload,
                 headers=HEADERS,
-                timeout=TIMEOUT
+                json=test_payload,
+                timeout=30
             )
-            if r.status_code == 201:
-                # Successfully created; store id for cleanup
-                resp_json = r.json()
-                short_url_full = resp_json.get("short_url", "")
-                sc = short_url_full.rstrip("/").rsplit("/", 1)[-1]
-                # Fetch URL id via list again
-                lr = requests.get(
-                    f"{BASE_URL}/api/urls?page=1&limit=100",
-                    headers=HEADERS,
-                    timeout=TIMEOUT
-                )
-                if lr.status_code == 200:
-                    urls = lr.json()
-                    matched = next((u for u in urls if u.get("short_code") == sc), None)
-                    if matched and matched.get("id") not in created_url_ids:
-                        created_url_ids.append(matched.get("id"))
-            elif r.status_code == 429:
-                hit_rate_limit = True
+            if rate_resp.status_code == 429:
                 break
             else:
-                # Unexpected status code, stop testing for rate limit
-                break
-        
-        assert hit_rate_limit, "Rate limit (429) not reached after multiple creation attempts"
+                # On 201 or other success, continue
+                assert rate_resp.status_code == 201, f"Expected 201 or 429, got {rate_resp.status_code}"
+        else:
+            assert False, "Rate limit 429 error was not triggered after multiple attempts"
 
     finally:
-        # Cleanup: Delete all created URLs
-        for uid in created_url_ids:
+        # Clean up created resource if exists
+        if created_url_id is not None:
             try:
                 del_resp = requests.delete(
-                    f"{BASE_URL}/api/urls/{uid}",
+                    f"{BASE_URL}/api/urls/{created_url_id}",
                     headers=HEADERS,
-                    timeout=TIMEOUT
+                    timeout=30
                 )
-                # Accept 200 OK or 404 if already deleted
-                assert del_resp.status_code in (200, 404)
+                # Allow 200 or 404 if already deleted, ignore errors in cleanup
             except Exception:
                 pass
-
 
 test_post_api_urls_create_short_link_with_validation_and_rate_limiting()

@@ -1,51 +1,58 @@
 import requests
 
 BASE_URL = "http://localhost:3000"
-VALID_INTERNAL_SECRET = "secret-key-used-in-tests"  # The valid secret used for success test
-
+INTERNAL_DEADLINK_SCAN_PATH = "/api/internal/workers/deadlink-scan"
+VALID_INTERNAL_SECRET = "super-secret-key"
+INVALID_INTERNAL_SECRET = "invalid-secret-token"
 
 def test_post_api_internal_workers_deadlink_scan_with_internal_secret():
-    import json
-
     headers_valid = {
         "x-internal-secret": VALID_INTERNAL_SECRET
     }
-    url = f"{BASE_URL}/api/internal/workers/deadlink-scan"
+    headers_missing = {}
+    headers_invalid = {
+        "x-internal-secret": INVALID_INTERNAL_SECRET
+    }
 
-    # Test valid secret - expect 200 and job enqueued message
+    # Test with valid internal secret - expect 200 and correct message
     try:
-        resp = requests.post(url, headers=headers_valid, timeout=30)
-    except requests.RequestException as e:
-        assert False, f"Request failed with exception: {e}"
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
+        response = requests.post(
+            f"{BASE_URL}{INTERNAL_DEADLINK_SCAN_PATH}",
+            headers=headers_valid,
+            timeout=30
+        )
+    except Exception as e:
+        assert False, f"Request with valid secret failed: {e}"
+    assert response.status_code == 200, f"Expected 200 but got {response.status_code} with valid secret"
+    json_resp = None
     try:
-        body = resp.json()
-    except ValueError:
-        assert False, "Response is not valid JSON"
-
-    assert "message" in body, "Response JSON missing 'message'"
-    assert body["message"] == "Dead link scan job enqueued", f"Unexpected message: {body['message']}"
+        json_resp = response.json()
+    except Exception:
+        assert False, "Response is not valid JSON with valid secret"
+    assert "message" in json_resp, "Response JSON missing 'message' key with valid secret"
+    assert json_resp["message"] == "Dead link scan job enqueued", f"Unexpected message: {json_resp['message']}"
 
     # Test missing internal secret - expect 401 Unauthorized
-    headers_missing_secret = {}
     try:
-        resp_missing = requests.post(url, headers=headers_missing_secret, timeout=30)
-    except requests.RequestException as e:
-        assert False, f"Request failed with exception: {e}"
-
-    assert resp_missing.status_code == 401, f"Expected 401 Unauthorized for missing secret, got {resp_missing.status_code}"
+        response = requests.post(
+            f"{BASE_URL}{INTERNAL_DEADLINK_SCAN_PATH}",
+            headers=headers_missing,
+            timeout=30
+        )
+    except Exception as e:
+        assert False, f"Request with missing secret failed: {e}"
+    assert response.status_code == 401, f"Expected 401 but got {response.status_code} with missing secret"
 
     # Test invalid internal secret - expect 401 Unauthorized
-    headers_invalid_secret = {
-        "x-internal-secret": "invalid-secret"  # invalid secret
-    }
     try:
-        resp_invalid = requests.post(url, headers=headers_invalid_secret, timeout=30)
-    except requests.RequestException as e:
-        assert False, f"Request failed with exception: {e}"
-
-    assert resp_invalid.status_code == 401, f"Expected 401 Unauthorized for invalid secret, got {resp_invalid.status_code}"
+        response = requests.post(
+            f"{BASE_URL}{INTERNAL_DEADLINK_SCAN_PATH}",
+            headers=headers_invalid,
+            timeout=30
+        )
+    except Exception as e:
+        assert False, f"Request with invalid secret failed: {e}"
+    assert response.status_code == 401, f"Expected 401 but got {response.status_code} with invalid secret"
 
 
 test_post_api_internal_workers_deadlink_scan_with_internal_secret()

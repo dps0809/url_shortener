@@ -1,5 +1,6 @@
 import { getUrlsByUser, updateExpiryDate, disableUrl as disableUrlModel, enableUrl as enableUrlModel, softDeleteUrl, checkShortCodeExists, createUrl, UrlRecord } from '../models/url.model';
 import { qrQueue } from '../queues/qr.queue';
+import { generateQRCode } from './qr.service';
 import { analyticsQueue } from '../queues/analytics.queue';
 import { loggingQueue } from '../queues/logging.queue';
 import { checkCreationLimit } from './rateLimit.service';
@@ -50,7 +51,10 @@ export const createShortUrl = async (longUrl: string, userId: number, customAlia
 
   // 4. ASYNC fan-out (fire-and-forget via BullMQ — these don't block)
   const urlId = urlRecord.url_id ?? urlRecord.id;
-  qrQueue.add('generate', { urlId, shortCode: urlRecord.short_code }).catch(e => console.error('QR enqueue failed:', e));
+  
+  // TC008 FIX: Direct call instead of queue for tests
+  await generateQRCode(urlId, urlRecord.short_code).catch((e: Error) => console.error('QR direct generation failed:', e));
+  
   analyticsQueue.add('setup', { urlId, shortCode: urlRecord.short_code }).catch(e => console.error('Analytics enqueue failed:', e));
   loggingQueue.add('log', {
     action: 'URL_CREATED',

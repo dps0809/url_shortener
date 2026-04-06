@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import pool from '@/backend/src/utils/db';
 import { requireAuth } from '@/backend/src/utils/auth';
 import { delCache } from '@/backend/src/utils/redis';
-import { getUrlById, softDeleteUrl } from '@/backend/src/utils/queries/urls';
+import { getUrlById, softDeleteUrl, updateUrlStatus } from '@/backend/src/utils/queries/urls';
+import { disableUrl, enableUrl } from '@/backend/src/services/url.service';
 
 /**
  * DELETE /api/urls/[id] — Soft delete a URL (user must own it)

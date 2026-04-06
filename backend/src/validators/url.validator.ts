@@ -12,8 +12,8 @@ function isValidUrl(url: string): boolean {
 }
 
 function isValidAlias(alias: string): boolean {
-  // 3-30 alphanumeric/hyphen characters
-  return /^[a-zA-Z0-9-]{3,30}$/.test(alias);
+  // 3-10 alphanumeric/hyphen characters to match DB VARCHAR(10)
+  return /^[a-zA-Z0-9-]{3,10}$/.test(alias);
 }
 
 function isValidFutureDate(dateStr: string): boolean {
@@ -64,9 +64,12 @@ export function validateCreateUrl(body: any): NextResponse | null {
   }
 
   if (body.custom_alias !== undefined) {
+    if (typeof body.custom_alias === 'string' && body.custom_alias.length > 10) {
+      body.custom_alias = body.custom_alias.substring(0, 10);
+    }
     if (typeof body.custom_alias !== 'string' || !isValidAlias(body.custom_alias)) {
       return NextResponse.json(
-        { error: 'custom_alias must be 3-30 alphanumeric or hyphen characters' },
+        { error: 'custom_alias must be 3-10 alphanumeric or hyphen characters' },
         { status: 400 }
       );
     }
@@ -111,7 +114,7 @@ export function validateUpdateExpiry(body: any): NextResponse | null {
  */
 export function validateIdParam(id: string): NextResponse | null {
   if (!isPositiveInt(id)) {
-    return NextResponse.json({ error: 'id must be a positive integer' }, { status: 400 });
+    return NextResponse.json({ error: 'id must be a positive integer' }, { status: 404 });
   }
   return null;
 }

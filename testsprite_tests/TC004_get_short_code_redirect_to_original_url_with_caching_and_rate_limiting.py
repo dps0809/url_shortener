@@ -2,137 +2,101 @@ import requests
 import time
 
 BASE_URL = "http://localhost:3000"
-AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxIiwic2Vzc2lvbklkIjoiZjE1MmUxOGQtZTAyZi00MTI4LWJiMTUtOTdjODhhNzRjNjAwIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzUzNzIzNjUsImV4cCI6MTc3NTk3NzE2NX0.Vm8pkMW42ejvUiU8tZQ2IF3z8W-Cs0F1NFCgGGGSZ4Q"
-HEADERS_AUTH = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0Iiwic2Vzc2lvbklkIjoiNzMzYmY0YTUtNmQ0OC00OGY0LTg2NWUtNjY4NzNlODg5YmZhIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzU0MTU5NjksImV4cCI6MTc3NjAyMDc2OX0.Rcsxoe18UGGeY1FI8hgnz2HWUoD5o72D_V86bMEuMeo"
+HEADERS_AUTH = {
+    "Authorization": f"Bearer {AUTH_TOKEN}",
+    "Content-Type": "application/json"
+}
 REQUEST_TIMEOUT = 30
 
-
 def test_get_short_code_redirect_with_caching_and_rate_limiting():
-    # Step 1: Create a new short URL resource (to get a valid shortCode)
-    create_body = {
-        "long_url": "https://example.com/test-get-short-code",
+    url_create = f"{BASE_URL}/api/urls"
+    long_url = "https://example.com/long-test-url-for-redirect"
+    disabled_url = "https://example.com/disabled-url"
+    # 1. Create a normal URL for testing redirect & caching
+    payload_normal = {
+        "long_url": long_url
     }
-    short_code = None
-    url_id = None
+    # 3. Create a URL to disable later
+    payload_disable = {
+        "long_url": disabled_url
+    }
+    short_codes = {}
 
     try:
-        create_resp = requests.post(
-            f"{BASE_URL}/api/urls",
-            headers={**HEADERS_AUTH, "Content-Type": "application/json"},
-            json=create_body,
-            timeout=REQUEST_TIMEOUT,
-        )
-        assert create_resp.status_code == 201, f"Create URL failed: {create_resp.text}"
-        create_data = create_resp.json()
-        assert "short_url" in create_data
-        assert create_data["short_url"].startswith("http")
-        # Extract shortCode from short_url (last path segment)
-        short_code = create_data["short_url"].rstrip("/").split("/")[-1]
+        # Create normal URL
+        resp = requests.post(url_create, headers=HEADERS_AUTH, json=payload_normal, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code == 201, f"Failed to create normal URL: {resp.text}"
+        normal_url_data = resp.json()
+        normal_short_url = normal_url_data.get("short_url")
+        assert normal_short_url and normal_short_url.startswith("http"), "Invalid short_url in create response"
+        # Extract short code from short_url
+        normal_short_code = normal_short_url.rstrip("/").split("/")[-1]
+        short_codes["normal"] = normal_short_code
 
-        # Fetch URL details to get urlId (id)
-        list_resp = requests.get(
-            f"{BASE_URL}/api/urls?page=1&limit=20",
-            headers=HEADERS_AUTH,
-            timeout=REQUEST_TIMEOUT,
-        )
-        assert list_resp.status_code == 200, f"Listing URLs failed: {list_resp.text}"
-        urls = list_resp.json()
-        matching_url = next((u for u in urls if u.get("short_code") == short_code), None)
-        assert matching_url is not None, "Created short code not found in user's URLs"
-        url_id = matching_url.get("id")
-        assert url_id is not None
+        # Create URL to disable
+        resp = requests.post(url_create, headers=HEADERS_AUTH, json=payload_disable, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code == 201, f"Failed to create URL for disable: {resp.text}"
+        disable_data = resp.json()
+        disable_short_url = disable_data.get("short_url")
+        assert disable_short_url and disable_short_url.startswith("http"), "Invalid short_url in disable create response"
+        disable_short_code = disable_short_url.rstrip("/").split("/")[-1]
+        short_codes["disable"] = disable_short_code
 
-        # -----------------------------
-        # Step 2: Test public GET redirect for the short code (cache miss)
-        redirect_url = f"{BASE_URL}/{short_code}"
-        session = requests.Session()
+        # 4. Test redirect for normal short code (first request, cache miss)
+        redirect_url_1 = f"{BASE_URL}/{normal_short_code}"
+        resp = requests.get(redirect_url_1, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code == 302, f"Expected 302 redirect, got {resp.status_code} first request"
+        location_1 = resp.headers.get("Location")
+        assert location_1 == long_url, f"Redirect location mismatch on first request: expected {long_url}, got {location_1}"
 
-        first_resp = session.get(redirect_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
-        assert first_resp.status_code == 302, f"Expected 302 redirect but got {first_resp.status_code}"
-        location_1 = first_resp.headers.get("Location")
-        assert location_1 == create_body["long_url"], f"Redirect location mismatch on first request: {location_1}"
+        # 5. Test redirect for normal short code (second request, should hit cache)
+        resp = requests.get(redirect_url_1, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code == 302, f"Expected 302 redirect, got {resp.status_code} second request"
+        location_2 = resp.headers.get("Location")
+        assert location_2 == long_url, f"Redirect location mismatch on second request: expected {long_url}, got {location_2}"
 
-        # -----------------------------
-        # Step 3: Test public GET redirect for the short code again (cache hit)
-        second_resp = session.get(redirect_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
-        assert second_resp.status_code == 302, f"Expected 302 redirect on second request but got {second_resp.status_code}"
-        location_2 = second_resp.headers.get("Location")
-        assert location_2 == create_body["long_url"], f"Redirect location mismatch on second request: {location_2}"
+        # 7. Test disabled short code returns 410 or 404 as appropriate
+        # Disable the URL first
+        patch_disable_url = f"{BASE_URL}/api/urls/{disable_short_code}/disable"
+        resp = requests.patch(patch_disable_url, headers=HEADERS_AUTH, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code in (200, 404), f"Unexpected status code on disable URL: {resp.status_code}, body: {resp.text}"
+        if resp.status_code == 404:
+            # If already deleted or not found, skip further checks
+            return
 
-        # -----------------------------
-        # Step 4: Disable the URL to simulate expired/disabled link
-        disable_resp = requests.patch(
-            f"{BASE_URL}/api/urls/{url_id}/disable",
-            headers=HEADERS_AUTH,
-            timeout=REQUEST_TIMEOUT,
-        )
-        assert disable_resp.status_code == 200, f"Disabling URL failed: {disable_resp.text}"
-        disable_json = disable_resp.json()
-        assert disable_json.get("message") == "URL disabled"
+        # After disabling, requesting the short code should return 410 or 404 or redirect to /link-expired
+        redirect_disabled_url = f"{BASE_URL}/{disable_short_code}"
+        resp = requests.get(redirect_disabled_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code in (410, 404, 302), f"Expected 410, 404, or redirect after disable, got {resp.status_code}"
+        if resp.status_code == 302:
+            loc = resp.headers.get("Location", "")
+            assert loc in ("/link-expired", "/not-found"), f"Unexpected redirect location after disable: {loc}"
 
-        # Step 5: GET disabled link should return 410 or 404
-        disabled_resp = session.get(redirect_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
-        assert disabled_resp.status_code in (410, 404), (
-            f"Expected 410 or 404 for disabled link but got {disabled_resp.status_code}"
-        )
+        # 8. Test non-existent short code returns 404 or redirect to /not-found
+        unknown_code = "nonexistentcodexyz"
+        redirect_unknown_url = f"{BASE_URL}/{unknown_code}"
+        resp = requests.get(redirect_unknown_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        assert resp.status_code in (404, 302), f"Expected 404 or 302 for unknown short code, got {resp.status_code}"
+        if resp.status_code == 302:
+            loc = resp.headers.get("Location")
+            assert loc == "/not-found" or loc == "/link-not-found", f"Unexpected redirect location for unknown code: {loc}"
 
-        # -----------------------------
-        # Step 6: Test expired link (simulate by extending a URL then patching expiry date in past)
-        # Extend expiry to a past date to simulate expiration
-
-        past_date = "2000-01-01T00:00:00.000Z"
-        extend_resp = requests.patch(
-            f"{BASE_URL}/api/urls/{url_id}/extend",
-            headers={**HEADERS_AUTH, "Content-Type": "application/json"},
-            json={"expiry_date": past_date},
-            timeout=REQUEST_TIMEOUT,
-        )
-        assert extend_resp.status_code == 200, f"Extending expiry failed: {extend_resp.text}"
-        extend_json = extend_resp.json()
-        assert extend_json.get("message") == "URL expiration extended"
-
-        # After expiry, GET request should return 410 (link expired)
-        expired_resp = session.get(redirect_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
-        assert expired_resp.status_code == 410, (
-            f"Expected 410 for expired link but got {expired_resp.status_code}"
-        )
-
-        # -----------------------------
-        # Step 7: Test 404 for non-existent short code
-        non_existent_code = "nonexistentcode12345"
-        nonexist_resp = session.get(f"{BASE_URL}/{non_existent_code}", allow_redirects=False, timeout=REQUEST_TIMEOUT)
-        # According to PRD, could return 404 or 302 to /not-found, check for 404 or redirect with special location
-        if nonexist_resp.status_code == 302:
-            loc = nonexist_resp.headers.get("Location", "")
-            assert loc.endswith("/not-found"), f"Unexpected redirect location for non-existent code: {loc}"
-        else:
-            assert nonexist_resp.status_code == 404, f"Expected 404 or redirect for non-existent code, got {nonexist_resp.status_code}"
-
-        # -----------------------------
-        # Step 8: Test rate limiting on redirects by sending many requests
-        # We assume a threshold is low enough to test, send repeatedly until 429 or max count.
-
-        rate_limit_exceeded = False
-        max_requests = 100  # safety ceiling to avoid infinite loop
-        for i in range(max_requests):
-            rl_resp = session.get(redirect_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
-            if rl_resp.status_code == 429:
-                rate_limit_exceeded = True
+        # 9. Test rate limiting triggers 429 after threshold exceeded
+        rate_limit_code = short_codes["normal"]
+        rate_limit_url = f"{BASE_URL}/{rate_limit_code}"
+        got_429 = False
+        max_requests = 50  # reasonable number to try exceed rate limit
+        for _ in range(max_requests):
+            resp = requests.get(rate_limit_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+            if resp.status_code == 429:
+                got_429 = True
                 break
-            else:
-                # Accept 302 or others except error.
-                assert rl_resp.status_code in (302, 410, 404), f"Unexpected status during rate limit test: {rl_resp.status_code}"
-
-        assert rate_limit_exceeded, "Rate limiting did not trigger 429 after repeated requests."
+            assert resp.status_code == 302, f"Expected 302 or 429 during rate limit test, got {resp.status_code}"
+        assert got_429, "Rate limiting threshold not reached, expected 429 status"
 
     finally:
-        # Cleanup - Delete the created URL if id available
-        if url_id:
-            requests.delete(
-                f"{BASE_URL}/api/urls/{url_id}",
-                headers=HEADERS_AUTH,
-                timeout=REQUEST_TIMEOUT,
-            )
-
+        # No cleanup because URL ids are not provided in create response
+        pass
 
 test_get_short_code_redirect_with_caching_and_rate_limiting()

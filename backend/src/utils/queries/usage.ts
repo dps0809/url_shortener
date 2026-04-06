@@ -1,6 +1,6 @@
 import { PoolClient } from 'pg';
 
-const MAX_REQUESTS_PER_DAY = 100;
+const MAX_REQUESTS_PER_DAY = 50;
 
 // ─── Check & Increment ───
 

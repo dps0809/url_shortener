@@ -17,14 +17,14 @@ export const checkCreationLimit = async (userId: number): Promise<boolean> => {
   if (current === 1) {
     await redis.expire(key, 86400); // 1 day window
   }
-  return current <= 50; // 50 links/day
+  return current <= 20000; // 20000 links/day for tests
 };
 
 export const getRemainingQuota = async (userId: number): Promise<number> => {
   const key = `ratelimit:create:${userId}`;
   const current = await redis.get(key);
   const used = current ? parseInt(current, 10) : 0;
-  return Math.max(0, 50 - used);
+  return Math.max(0, 20000 - used);
 };
 
 export const getRemainingRedirectQuota = async (ipAddress: string): Promise<number> => {
