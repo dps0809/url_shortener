@@ -119,7 +119,7 @@ export async function listAllUrls(
             h.is_dead, h.last_status_code,
             ss.scan_result
      FROM urls u
-     LEFT JOIN users us ON us.user_id = u.user_id
+     LEFT JOIN users us ON us.id = u.user_id
      LEFT JOIN link_health h ON h.url_id = u.url_id
      LEFT JOIN (
        SELECT DISTINCT ON (url_id) url_id, scan_result

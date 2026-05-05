@@ -56,6 +56,11 @@ export function validateCreateUrl(body: any): NextResponse | null {
     return NextResponse.json({ error: 'long_url is required and must be a string' }, { status: 400 });
   }
 
+  // Smart Normalization: Prepend https:// if protocol is missing (Section 7)
+  if (!body.long_url.startsWith('http://') && !body.long_url.startsWith('https://')) {
+    body.long_url = `https://${body.long_url}`;
+  }
+
   if (!isValidUrl(body.long_url)) {
     return NextResponse.json(
       { error: 'long_url must be a valid HTTP or HTTPS URL' },
@@ -64,9 +69,6 @@ export function validateCreateUrl(body: any): NextResponse | null {
   }
 
   if (body.custom_alias !== undefined) {
-    if (typeof body.custom_alias === 'string' && body.custom_alias.length > 10) {
-      body.custom_alias = body.custom_alias.substring(0, 10);
-    }
     if (typeof body.custom_alias !== 'string' || !isValidAlias(body.custom_alias)) {
       return NextResponse.json(
         { error: 'custom_alias must be 3-10 alphanumeric or hyphen characters' },

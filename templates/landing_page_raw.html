@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShortLink | Premium URL Shortener</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#e5deff",
+                      "on-tertiary-container": "#f5fff7",
+                      "inverse-on-surface": "#ecf1f8",
+                      "inverse-surface": "#2b3136",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#68fcbf",
+                      "inverse-primary": "#b1c5ff",
+                      "surface-container-low": "#eff4fb",
+                      "on-primary-fixed": "#001847",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed": "#1a0063",
+                      "error-container": "#ffdad6",
+                      "outline": "#737786",
+                      "on-error": "#ffffff",
+                      "on-background": "#171c21",
+                      "on-primary-container": "#fefcff",
+                      "secondary": "#5b3cdd",
+                      "tertiary": "#006949",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-variant": "#dee3ea",
+                      "secondary-fixed-dim": "#c9bfff",
+                      "on-surface-variant": "#424654",
+                      "surface-bright": "#f6f9ff",
+                      "on-tertiary-fixed-variant": "#005137",
+                      "on-error-container": "#93000a",
+                      "surface-container-high": "#e4e9f0",
+                      "on-secondary-fixed-variant": "#441cc8",
+                      "outline-variant": "#c2c6d7",
+                      "tertiary-container": "#00855d",
+                      "primary-fixed-dim": "#b1c5ff",
+                      "on-secondary-container": "#fffbff",
+                      "primary-fixed": "#dae2ff",
+                      "on-surface": "#171c21",
+                      "tertiary-fixed-dim": "#45dfa4",
+                      "secondary-container": "#7459f7",
+                      "on-tertiary-fixed": "#002114",
+                      "surface-tint": "#0056d0",
+                      "primary": "#0054cb",
+                      "on-primary": "#ffffff",
+                      "background": "#f6f9ff",
+                      "on-tertiary": "#ffffff",
+                      "surface": "#f6f9ff",
+                      "on-primary-fixed-variant": "#0040a0",
+                      "surface-dim": "#d5dae1",
+                      "surface-container-highest": "#dee3ea",
+                      "surface-container": "#e9eef5",
+                      "primary-container": "#256df0"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.5rem",
+                      "lg": "1rem",
+                      "xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>body {
+    background: radial-gradient(circle at 50% 0%, #0f172a 0%, #020617 100%);
+    position: relative;
+    overflow-x: hidden
+    }
+.noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuAgEChLhB-ZiLJHG7cv9NYXmJYMJU7KaKn2eEBV_Y8PsodMjXqb4AxgnIk1ryB0iAyS63SBFLE-fdrHgRQwFWYFI2QMWsFARyG5PxfZd4mlX_P7qLz0x-ycwgSjRtWwV0EmiLFsPt_RpR67rzfKykChzxTCjB_j7iSzC8v7hbFSmqgF-gPvB7Oyt5us1StbCMvwjgdEnnuxbVy04Nrd7rFohKTS-ieq5ZTdVs73eMdEP4vghYFYKkp3xmSF8LhQGTLQKu2GphJ9J-g);
+    z-index: 50
+    }
+.clay-button {
+    box-shadow: inset 0 4px 4px rgba(255, 255, 255, 0.15), 0 10px 20px -5px rgba(0, 84, 203, 0.4)
+    }
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1)
+    }
+.particle-glow {
+    filter: blur(80px);
+    background: radial-gradient(circle, rgba(37, 109, 240, 0.3) 0%, rgba(0, 0, 0, 0) 70%)
+    }
+html {
+    scroll-behavior: smooth;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reveal-on-scroll {
+    opacity: 0;
+    animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+</style>
+</head>
+<body class="font-body text-on-surface bg-slate-950 min-h-screen">
+<div class="noise-overlay"></div>
+<!-- Background Atmospheric Elements -->
+<div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] particle-glow -z-10"></div>
+<div class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] particle-glow -z-10 opacity-50"></div>
+<!-- SideNavBar (Suppressed for Landing Page focus as per mandate, but present in JSON) -->
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 right-0 h-16 z-40 bg-white/5 dark:bg-slate-900/20 backdrop-blur-xl flex justify-between items-center px-8 border-b border-white/10">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">link</span>
+</div>
+<span class="font-headline font-extrabold text-white text-xl tracking-tighter">ShortLink</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-white font-bold font-manrope text-sm" href="#">Dashboard</a>
+<a class="text-slate-400 hover:text-white transition-opacity font-manrope text-sm" href="#">Features</a>
+<a class="text-slate-400 hover:text-white transition-opacity font-manrope text-sm" href="#">Pricing</a>
+<a class="text-slate-400 hover:text-white transition-opacity font-manrope text-sm" href="#">API</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400 hover:opacity-80 transition-opacity cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-slate-400 hover:opacity-80 transition-opacity cursor-pointer">help</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-white/20">
+<img alt="User avatar" data-alt="close-up portrait of a professional male with a neutral expression against a soft studio lighting background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_0OoQ9nsL8mhgQV6WypKJHgZRDPAEeOE8nmTIqi8qKWYxR6qKDtktyBJMQZtL6y7uItYphyJxy4nn-uyPWT-L3DMcCUxVSeDpfR-oEJAKSXl4D_4UGPMW3y0iA-Tz_ysC2aO6kUX7EUzj3doA217J9kkPDSuMfvfJurQVt6uxlAacdFkXwdn4etIOdbJyS7CSM1NgPpZ4nY05-4cGoqIkaPiE-UWoTB8-_fgO6ZifevSmfbxDs03vMsla3AMonAP7IM_ShYltW4g"/>
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+<!-- Hero Section -->
+<section class="text-center mb-24 relative">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full particle-glow -z-10 opacity-40"></div>
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-8 reveal-on-scroll">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-xs font-bold text-white tracking-widest uppercase">Premium SaaS Experience</span>
+</div>
+<h1 class="font-headline font-extrabold text-5xl md:text-7xl text-white mb-6 leading-tight tracking-tight max-w-4xl mx-auto reveal-on-scroll delay-100">
+                Hello there, Welcome to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">URL Shortener</span>
+</h1>
+<p class="font-body text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed reveal-on-scroll delay-200">
+                Elevate your links with atmospheric depth. Track, optimize, and share with a professional glassmorphic interface designed for authority.
+            </p>
+<div class="flex flex-col md:flex-row items-center justify-center gap-4 reveal-on-scroll delay-300">
+<button class="clay-button bg-primary-container text-white px-8 py-4 rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 group">
+                    Get Started Free
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="glass-card text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all">
+                    View Demo
+                </button>
+</div>
+</section>
+<!-- Bento Grid Features -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+<!-- Large Main Bento -->
+<div class="md:col-span-2 glass-card rounded-xl p-8 flex flex-col justify-between overflow-hidden relative min-h-[400px] reveal-on-scroll delay-100">
+<div class="relative z-10">
+<h3 class="font-headline font-bold text-3xl text-white mb-4">Real-time Analytics</h3>
+<p class="text-slate-400 max-w-md">Detailed geographic data, device tracking, and click-through rates visualized in an ethereal professional interface.</p>
+</div>
+<div class="absolute bottom-0 right-0 w-3/4 h-3/4 opacity-40 translate-y-10 translate-x-10">
+<img alt="Dashboard analytics" class="rounded-tl-2xl shadow-2xl" data-alt="sleek professional data dashboard on a dark screen featuring glowing blue and purple charts and geometric data points" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2N1dvNd8-UwBA05HAaLQm4O2pb-0OD6NYzZeV5GkoXSFsEB_MWfLndG_TRfLF--Pj0sahkSi2WMDvTiYAXvNzXVUuDMZfkXmwsLdhA7jI1K9PCENYpI8XausZ0wY6PZLKwa7tzHx9vY8nZG8FVKvaEcDTXvk2ZdtZtSKpwr_C18F6hH5284DjNqeLz_MvP1k2fWJpjR3KSgT-r93AUowQ2sprPzPCBibJ61fnokpFoGIs7cEMp0zJLZMFj2kRoBr08RCm_uqrV6w"/>
+</div>
+<div class="mt-8 flex gap-4">
+<div class="bg-white/5 p-4 rounded-lg">
+<p class="text-xs text-slate-500 mb-1">Weekly Clicks</p>
+<p class="text-2xl font-bold text-white">42.8k</p>
+</div>
+<div class="bg-white/5 p-4 rounded-lg">
+<p class="text-xs text-slate-500 mb-1">New Leads</p>
+<p class="text-2xl font-bold text-blue-400">+12%</p>
+</div>
+</div>
+</div>
+<!-- Small Vertical Bento -->
+<div class="glass-card rounded-xl p-8 flex flex-col items-start justify-center reveal-on-scroll delay-200">
+<div class="w-12 h-12 bg-secondary/20 rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<h3 class="font-headline font-bold text-2xl text-white mb-4">Lightning Fast</h3>
+<p class="text-slate-400 mb-6 leading-relaxed">Global CDN edge shortening ensures your links resolve in under 20ms anywhere in the world.</p>
+<a class="text-blue-400 font-bold flex items-center gap-1 hover:underline" href="#">
+                    Learn about Edge
+                    <span class="material-symbols-outlined text-sm">north_east</span>
+</a>
+</div>
+<!-- Custom Branded Links -->
+<div class="glass-card rounded-xl p-8 flex flex-col justify-between reveal-on-scroll delay-300">
+<div>
+<span class="material-symbols-outlined text-primary mb-4">verified</span>
+<h3 class="font-headline font-bold text-2xl text-white mb-2">Custom Branding</h3>
+<p class="text-slate-400 text-sm leading-relaxed">Replace our domain with yours. Boost trust and brand recognition by 34%.</p>
+</div>
+<div class="mt-6 flex flex-col gap-2">
+<div class="glass-card px-4 py-3 rounded-lg text-xs text-slate-300">link.brand.com/summer-sale</div>
+<div class="glass-card px-4 py-3 rounded-lg text-xs text-slate-300">go.brand.io/new-feature</div>
+</div>
+</div>
+<!-- Security Bento -->
+<div class="md:col-span-2 glass-card rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 reveal-on-scroll delay-400">
+<div class="flex-1">
+<h3 class="font-headline font-bold text-2xl text-white mb-4">Enterprise Security</h3>
+<p class="text-slate-400 text-sm mb-6 leading-relaxed">SSO integration, password-protected links, and 256-bit encryption for all your high-stakes data assets.</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-white/5 rounded-full text-[10px] text-slate-400 font-bold tracking-widest uppercase">GDPR Ready</span>
+<span class="px-3 py-1 bg-white/5 rounded-full text-[10px] text-slate-400 font-bold tracking-widest uppercase">SOC2 Type II</span>
+</div>
+</div>
+<div class="w-full md:w-64">
+<img alt="Security Illustration" class="rounded-xl opacity-80" data-alt="abstract close-up of a digital security interface with glowing holographic nodes and cyber security patterns in blue hues" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWBTMJbUVpVp5YhlDB0_Ppje1pfZrIGpbhZGCfQovjHU6cTNAQ940rQH6TZfHbPBOqLreJpqjjEZ8L1bE8RXFzJLHVT3H_bvoTqUoBZX0W9kX-cL7SZi2TF83AM_d4x4UhhKsNSfpsmrparKd32ZulcH2PIpRcJ1s9Y0I_6io4xmbVDQsSpdqipAHyWS0B5Lf7USZ7k1YF35CZh9NpNCHZoEwQ-7-I36qvD8IYEQgkqGoaJ2bmuiUOfHmA53Ufx1Grj1eG7_JhwdI"/>
+</div>
+</div>
+</section>
+<!-- Dynamic Shortener Section -->
+<section class="mb-32 relative py-20 px-8 rounded-3xl overflow-hidden glass-card reveal-on-scroll">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent -z-10"></div>
+<div class="text-center max-w-2xl mx-auto mb-12">
+<h2 class="font-headline font-extrabold text-4xl text-white mb-4">Try it now</h2>
+<p class="text-slate-400">Experience the speed of ShortLink. No account required to start.</p>
+</div>
+<div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-4">
+<div class="flex-1 glass-card bg-white/5 rounded-xl flex items-center px-6">
+<span class="material-symbols-outlined text-slate-500 mr-4">link</span>
+<input class="bg-transparent border-none focus:ring-0 text-white w-full py-4 font-body" placeholder="Paste your long URL here..." type="text"/>
+</div>
+<button class="clay-button bg-primary text-white px-10 py-4 rounded-xl font-bold whitespace-nowrap">
+                    Shorten Link
+                </button>
+</div>
+</section>
+<!-- Social Proof -->
+<section class="text-center reveal-on-scroll">
+<p class="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mb-12">Trusted by teams at</p>
+<div class="flex flex-wrap justify-center items-center gap-12 opacity-30 grayscale contrast-200">
+<div class="font-headline font-black text-2xl text-white">VORTEX</div>
+<div class="font-headline font-black text-2xl text-white">SPHERE</div>
+<div class="font-headline font-black text-2xl text-white">EQUINOX</div>
+<div class="font-headline font-black text-2xl text-white">AETHER</div>
+<div class="font-headline font-black text-2xl text-white">LUMINA</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-black/50 border-t border-white/5 py-12 px-6">
+<div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
+<div class="col-span-2 md:col-span-1 reveal-on-scroll">
+<div class="flex items-center gap-2 mb-6">
+<div class="w-6 h-6 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xs" style="font-variation-settings: 'FILL' 1;">link</span>
+</div>
+<span class="font-headline font-extrabold text-white text-lg tracking-tighter">ShortLink</span>
+</div>
+<p class="text-slate-500 text-sm leading-relaxed">
+                    The premium standard for digital communication and high-authority link management.
+                </p>
+</div>
+<div class="reveal-on-scroll">
+<h4 class="text-white font-bold mb-6">Product</h4>
+<ul class="space-y-4 text-sm text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Features</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Integrations</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Pricing</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Enterprise</a></li>
+</ul>
+</div>
+<div class="reveal-on-scroll">
+<h4 class="text-white font-bold mb-6">Company</h4>
+<ul class="space-y-4 text-sm text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">About</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Blog</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Careers</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Press</a></li>
+</ul>
+</div>
+<div class="reveal-on-scroll">
+<h4 class="text-white font-bold mb-6">Support</h4>
+<ul class="space-y-4 text-sm text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Help Center</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">API Docs</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Security</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Status</a></li>
+</ul>
+</div>
+</div>
+<div class="max-w-7xl mx-auto flex flex-col md:row-span-1 md:flex-row justify-between items-center pt-12 border-t border-white/5">
+<p class="text-slate-600 text-xs mb-4 md:mb-0">© 2024 ShortLink Premium SaaS. All rights reserved.</p>
+<div class="flex gap-6 text-xs text-slate-600">
+<a class="hover:text-slate-400" href="#">Privacy Policy</a>
+<a class="hover:text-slate-400" href="#">Terms of Service</a>
+<a class="hover:text-slate-400" href="#">Cookie Policy</a>
+</div>
+</div>
+</footer>
+</body></html>

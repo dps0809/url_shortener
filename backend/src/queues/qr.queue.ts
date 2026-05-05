@@ -15,3 +15,9 @@ export const qrQueue = new Queue<QRQueueJobData>('qrQueue', {
     removeOnFail: 200,
   },
 });
+
+export const addQRJob = async (name: string, data: QRQueueJobData) => {
+  const job = await qrQueue.add(name, data);
+  console.log(`[qrQueue] Job added: ${job.id} for shortCode: ${data.shortCode}`);
+  return job;
+};

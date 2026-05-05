@@ -4,7 +4,7 @@ import { PoolClient } from 'pg';
 
 export async function insertAuditLog(
   client: PoolClient,
-  adminId: number,
+  adminId: number | null,
   action: string,
   targetUrlId: number | null = null
 ) {
@@ -33,7 +33,7 @@ export async function getAuditLogs(
     `SELECT a.id, a.action, a.target_url_id, a.created_at,
             u.email as admin_email
      FROM audit_logs a
-     JOIN users u ON u.user_id = a.admin_id
+     JOIN users u ON u.id = a.admin_id
      ORDER BY a.created_at DESC
      LIMIT $1 OFFSET $2`,
     [limit, offset]

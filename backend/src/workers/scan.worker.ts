@@ -1,40 +1,73 @@
-import { Job, Worker } from 'bullmq';
-import { redis } from '../utils/redis';
-import { scanUrl, storeScanResult } from '../services/scan.service';
-import { ScanQueueJobData } from '../queues/scan.queue';
-import { MaintenanceQueueJobData } from '../queues/maintenance.queue';
+import { Worker, Job, UnrecoverableError } from 'bullmq';
+import { scanUrl } from '../utils/safety';
+import { duplicateRedis } from '../utils/redis';
+import { finalizeUrlCreation } from '../services/url.service';
 
-// 1. Worker for new URL creations (scanQueue)
-export const scanWorker = new Worker(
-  'scanQueue',
-  async (job: Job<ScanQueueJobData>): Promise<{ result: string; provider: string }> => {
-    const { longUrl } = job.data;
-    const scanOutcome = await scanUrl(longUrl);
+/**
+ * Robust Scan Worker (Pipeline Driver)
+ * Processes URL safety scans and triggers the creation phase if safe.
+ */
+export const createScanWorker = () => {
+  console.log('--- [scanWorker] Initializing and listening on "scanQueue" ---');
+  
+  const worker = new Worker(
+    'scanQueue',
+    async (job: Job) => {
+      const { longUrl, userId, shortCode, expiryDate } = job.data;
+      console.log(`[scanWorker] [START] Job ${job.id} - URL: ${longUrl}`);
+      
+      try {
+        const scanOutcome = await scanUrl(longUrl);
+        console.log(`[scanWorker] [SUCCESS] Job ${job.id} - Result: ${scanOutcome.result}`);
 
-    if (scanOutcome.result !== 'safe') {
-      throw new Error(`URL blocked: ${scanOutcome.result}`);
+        // If MALICIOUS, throw UnrecoverableError to discard immediately (no retry)
+        if (scanOutcome.result !== 'safe') {
+          console.warn(`[scanWorker] [BLOCKED] Job ${job.id}: URL blocked: ${scanOutcome.result}`);
+          throw new UnrecoverableError(`URL blocked: ${scanOutcome.result}`);
+        }
+
+        // TRIGGER NEXT PHASE: Only if safe
+        const urlRecord = await finalizeUrlCreation({
+          longUrl,
+          userId,
+          shortCode,
+          expiryDate,
+          scanResult: scanOutcome.result,
+          provider: scanOutcome.provider
+        });
+
+        // Return the record so waitForJob in Service layer gets it
+        return urlRecord;
+
+      } catch (error: any) {
+        if (!(error instanceof UnrecoverableError)) {
+          console.error(`[scanWorker] [FATAL] Job ${job.id} error:`, error);
+        }
+        throw error;
+      }
+    },
+    { 
+      connection: duplicateRedis(), 
+      concurrency: 10,
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 1000 }
     }
+  );
 
-    return { result: scanOutcome.result, provider: scanOutcome.provider };
-  },
-  { connection: redis, concurrency: 10 }
-);
-
-// 2. Worker for manual malware scans (maintenanceQueue)
-export const malwareScanWorker = new Worker(
-  'maintenanceQueue',
-  async (job: Job<MaintenanceQueueJobData>) => {
-    if (job.data?.task !== 'malware_scan') return;
-
-    const { urlId, originalUrl } = job.data;
-    if (urlId && originalUrl) {
-      console.log(`[malwareScanWorker] Manually scanning URL ${urlId}: ${originalUrl}`);
-      const scanOutcome = await scanUrl(originalUrl);
-      await storeScanResult(urlId, scanOutcome.result, scanOutcome.provider);
-      return { ok: true, result: scanOutcome.result };
+  worker.on('error', (err) => console.error('[scanWorker] Global Error:', err));
+  worker.on('failed', (job, err) => {
+    if (!err.message.includes('URL blocked')) {
+      console.error(`[scanWorker] Job ${job?.id} failed unexpectedly:`, err);
     }
-    
-    return { ok: false, error: 'Missing urlId or originalUrl' };
-  },
-  { connection: redis, concurrency: 5 }
-);
+  });
+
+  return worker;
+};
+
+// Singleton pattern to prevent multiple workers in Dev (HMR)
+const globalForWorkers = global as unknown as { scanWorker: Worker };
+export const scanWorker = globalForWorkers.scanWorker || createScanWorker();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForWorkers.scanWorker = scanWorker;
+}

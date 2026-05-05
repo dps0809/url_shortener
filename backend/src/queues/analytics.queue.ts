@@ -24,3 +24,9 @@ export const analyticsQueue = new Queue<AnalyticsJobData>('analyticsQueue', {
     removeOnFail: 500,
   },
 });
+
+export const addAnalyticsJob = async (name: string, data: AnalyticsJobData) => {
+  const job = await analyticsQueue.add(name, data);
+  console.log(`[analyticsQueue] Job added: ${job.id} (name: ${name})`);
+  return job;
+};

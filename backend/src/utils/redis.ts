@@ -14,14 +14,42 @@ class RedisClient {
         },
       });
 
-      RedisClient.instance.on('error', (err) => console.error('Redis Client Error:', err));
-      RedisClient.instance.on('connect', () => console.log('Redis Client Connected'));
+      RedisClient.instance.on('error', (err) => {
+        console.error('Redis Client Critical Error:', err);
+      });
+      RedisClient.instance.on('connect', () => {
+        console.log('Redis Client: Connection established.');
+      });
+      RedisClient.instance.on('ready', () => {
+        console.log('Redis Client: Ready to serve requests.');
+      });
+
+      // Verification ping
+      RedisClient.instance.ping()
+        .then(() => console.log('Redis Connectivity Check: OK'))
+        .catch(err => console.error('Redis Connectivity Check: FAILED', err));
     }
     return RedisClient.instance;
   }
 }
 
 export const redis = RedisClient.getInstance();
+export const getRedisInstance = () => RedisClient.getInstance();
+
+/**
+ * Creates a duplicate Redis connection specialized for BullMQ components.
+ * BullMQ requires maxRetriesPerRequest to be null for QueueEvents and Workers.
+ */
+export function duplicateRedis(): Redis {
+  const url = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+  console.log(`[Redis] Creating duplicate connection specialized for BullMQ: ${url}`);
+  return new Redis(url, {
+    maxRetriesPerRequest: null,
+    retryStrategy(times) {
+      return Math.min(times * 50, 2000);
+    },
+  });
+}
 
 export async function getCache(key: string): Promise<string | null> {
   try {

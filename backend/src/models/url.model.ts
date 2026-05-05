@@ -5,7 +5,7 @@ export interface UrlRecord {
   url_id: number;   // actual PK column name
   short_code: string;
   long_url: string;
-  user_id: number;
+  user_id: number | null;
   click_count: number;
   expiry_date: Date | null;
   max_clicks: number | null;
@@ -15,7 +15,7 @@ export interface UrlRecord {
   updated_at: Date;
 }
 
-export const createUrl = async (shortCode: string, longUrl: string, userId: number, expiryDate: Date | null): Promise<UrlRecord | null> => {
+export const createUrl = async (shortCode: string, longUrl: string, userId: number | null, expiryDate: Date | null): Promise<UrlRecord | null> => {
   const result = await query<UrlRecord>(
     `INSERT INTO urls (short_code, long_url, user_id, expiry_date, status)
      VALUES ($1, $2, $3, $4, 'active')

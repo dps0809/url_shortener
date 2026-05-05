@@ -1,7 +1,7 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';  
 import pool from './db';
-import { getSessionWithUser } from './queries/sessions';
+import { UserModel } from '@/app/auth/models/user.model';
 
 const SALT_ROUNDS = 12;
 
@@ -27,9 +27,8 @@ export async function comparePassword(
 // ─── JWT Utilities ───
 
 export interface TokenPayload {
-  userId: number;
-  sessionId: string;
-  role: string;
+  user_id: number;
+  email: string;
 }
 
 export function signToken(payload: TokenPayload, expiresInSeconds: number = 604800): string {
@@ -50,7 +49,7 @@ export interface AuthUser {
   userId: number;
   email: string;
   role: string;
-  sessionId: string;
+  name: string;
 }
 
 /**
@@ -59,33 +58,27 @@ export interface AuthUser {
  * Acquires its own client since this runs before route-level pool.connect().
  */
 export async function getSession(request: Request): Promise<AuthUser | null> {
-  const client = await pool.connect();
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) return null;
 
     const token = authHeader.slice(7);
-    const payload = verifyToken(token);
-    if (!payload) return null;
+    const secret = process.env.JWT_SECRET || 'fallback_secret';
+    const payload = jwt.verify(token, secret) as TokenPayload;
+    if (!payload || !payload.user_id) return null;
 
-    // Verify session still exists in DB
-    const session = await getSessionWithUser(client, payload.sessionId, payload.userId);
-    if (!session) return null;
-
-    // Check if session expired or user deactivated
-    if (new Date(session.expires_at) < new Date()) return null;
-    if (!session.is_active) return null;
+    const user = await UserModel.findById(payload.user_id);
+    if (!user || !user.is_active) return null;
 
     return {
-      userId: session.user_id,
-      email: session.email,
-      role: session.role,
-      sessionId: session.session_id,
+      userId: user.id,
+      email: user.email,
+      role: 'user', // Default for now, or fetch from roles table if it exists
+      name: user.name,
     };
-  } catch {
+  } catch (err) {
+    console.error('Auth check failed:', err);
     return null;
-  } finally {
-    client.release();
   }
 }
 

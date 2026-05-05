@@ -1,5 +1,5 @@
 import { Queue, QueueEvents } from 'bullmq';
-import { redis } from '../utils/redis';
+import { redis, duplicateRedis } from '../utils/redis';
 
 export interface MaintenanceQueueJobData {
   task: 'dead_link_scan' | 'expiry_scan' | 'click_sync' | 'malware_scan';
@@ -17,4 +17,12 @@ export const maintenanceQueue = new Queue<MaintenanceQueueJobData>('maintenanceQ
   },
 });
 
-export const maintenanceQueueEvents = new QueueEvents('maintenanceQueue', { connection: redis.duplicate() });
+export const addMaintenanceJob = async (name: string, data: MaintenanceQueueJobData) => {
+  const job = await maintenanceQueue.add(name, data);
+  console.log(`[maintenanceQueue] Job added: ${job.id} (task: ${data.task})`);
+  return job;
+};
+
+export const maintenanceQueueEvents = new QueueEvents('maintenanceQueue', { 
+  connection: duplicateRedis() 
+});

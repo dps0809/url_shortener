@@ -3,7 +3,7 @@ import { redis } from '../utils/redis';
 
 export interface LoggingQueueJobData {
   action: 'URL_CREATED' | 'URL_MALICIOUS_BLOCKED';
-  userId: number;
+  userId: number | null;
   urlId?: number;
   shortCode?: string;
   longUrl?: string;
@@ -20,3 +20,9 @@ export const loggingQueue = new Queue<LoggingQueueJobData>('loggingQueue', {
     removeOnFail: 500,
   },
 });
+
+export const addLoggingJob = async (name: string, data: LoggingQueueJobData) => {
+  const job = await loggingQueue.add(name, data);
+  console.log(`[loggingQueue] Job added: ${job.id} (action: ${data.action})`);
+  return job;
+};

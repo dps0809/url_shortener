@@ -1,20 +1,37 @@
-import { redis } from '../utils/redis';
-import { query } from '../utils/db';
 import { scanWorker } from '../workers/scan.worker';
 import { linkCreationWorker } from '../workers/linkCreation.worker';
 import { qrWorker } from '../workers/qr.worker';
 import { analyticsWorker } from '../workers/analytics.worker';
+import { maintenanceWorker } from '../workers/maintenance.worker';
 import { loggingWorker } from '../workers/logging.worker';
-import { deadLinkWorker } from '../workers/deadLink.worker';
-import { expiryWorker } from '../workers/expiry.worker';
 import { maintenanceQueue } from '../queues/maintenance.queue';
 
-// Start and Schedule Workers
+/**
+ * Worker Coordination Service
+ * Provides life-cycle hooks for background workers.
+ */
+
+// Schedule Repeatable Maintenance Tasks
 export const startAllWorkers = async () => {
-  console.log('--- Starting URL Shortener Background Workers ---');
-  
-  // Handled by worker file imports/declarations
-  console.log('✓ Workers initialized');
+  console.log('\n--- [workerService] Initializing Background Pipelines ---');
+
+  // Trigger worker initializations (ensure singletons are created)
+  const workers = [
+    scanWorker,
+    linkCreationWorker,
+    qrWorker,
+    analyticsWorker,
+    maintenanceWorker,
+    loggingWorker
+  ];
+
+  console.log(`✓ [workerService] ${workers.length} workers active.`);
+
+  // Clear existing repeatable jobs to avoid duplicates if necessary
+  const repeatableJobs = await maintenanceQueue.getRepeatableJobs();
+  for (const job of repeatableJobs) {
+    await maintenanceQueue.removeRepeatableByKey(job.key);
+  }
 
   // Schedule Maintenance Tasks (Repeatable Jobs)
   
@@ -41,23 +58,6 @@ export const startAllWorkers = async () => {
     { repeat: { every: 10 * 60 * 1000 }, jobId: 'expiry_cleanup_job' }
   );
   console.log('✓ Scheduled: Expiry Cleanup (10 min)');
-};
 
-// Logic helpers (kept for direct manual trigger if needed)
-export const syncClickCounters = async () => {
-  try {
-    const keys = await redis.keys('clicks:*');
-    for (const key of keys) {
-      const code = key.replace('clicks:', '');
-      const clicksStr = await redis.get(key);
-      const clicks = parseInt(clicksStr || '0', 10);
-      
-      if (clicks > 0) {
-        await query('UPDATE urls SET click_count = click_count + $1 WHERE short_code = $2', [clicks, code]);
-        await redis.decrby(key, clicks);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to sync click counters:', error);
-  }
+  return workers;
 };

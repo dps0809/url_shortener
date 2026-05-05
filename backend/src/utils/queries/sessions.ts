@@ -26,9 +26,9 @@ export async function getSessionWithUser(
 ) {
   const { rows } = await client.query(
     `SELECT s.session_id, s.expires_at, s.created_at,
-            u.user_id, u.email, u.role, u.is_active
+            u.id, u.email, u.role, u.is_active
      FROM user_sessions s
-     JOIN users u ON u.user_id = s.user_id
+     JOIN users u ON u.id = s.user_id
      WHERE s.session_id = $1 AND s.user_id = $2`,
     [sessionId, userId]
   );

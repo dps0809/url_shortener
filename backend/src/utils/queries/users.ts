@@ -9,9 +9,9 @@ export async function createUser(
   role: string = 'user'
 ) {
   const { rows } = await client.query(
-    `INSERT INTO users (email, password_h, role)
+    `INSERT INTO users (email, password_hash, role)
      VALUES ($1, $2, $3)
-     RETURNING user_id, email, role, is_active, created_at`,
+     RETURNING id, email, role, is_active, created_at`,
     [email, passwordHash, role]
   );
   return rows[0] || null;
@@ -21,7 +21,7 @@ export async function createUser(
 
 export async function getUserByEmail(client: PoolClient, email: string) {
   const { rows } = await client.query(
-    `SELECT user_id, email, password_h, role, is_active, created_at
+    `SELECT id, email, password_hash, role, is_active, created_at
      FROM users
      WHERE email = $1 AND is_active = true`,
     [email]
@@ -29,12 +29,12 @@ export async function getUserByEmail(client: PoolClient, email: string) {
   return rows[0] || null;
 }
 
-export async function getUserById(client: PoolClient, userId: number) {
+export async function getUserById(client: PoolClient, id: number) {
   const { rows } = await client.query(
-    `SELECT user_id, email, role, is_active, created_at
+    `SELECT id, email, role, is_active, created_at
      FROM users
-     WHERE user_id = $1 AND is_active = true`,
-    [userId]
+     WHERE id = $1 AND is_active = true`,
+    [id]
   );
   return rows[0] || null;
 }
@@ -49,10 +49,10 @@ export async function checkEmailExists(client: PoolClient, email: string) {
 
 // ─── Update ───
 
-export async function deactivateUser(client: PoolClient, userId: number) {
+export async function deactivateUser(client: PoolClient, id: number) {
   const { rowCount } = await client.query(
-    'UPDATE users SET is_active = false WHERE user_id = $1',
-    [userId]
+    'UPDATE users SET is_active = false WHERE id = $1',
+    [id]
   );
   return (rowCount ?? 0) > 0;
 }
@@ -68,7 +68,7 @@ export async function listUsers(
   const total = parseInt(countResult.rows[0].total, 10);
 
   const { rows } = await client.query(
-    `SELECT user_id, email, role, is_active, created_at
+    `SELECT id, email, role, is_active, created_at
      FROM users
      ORDER BY created_at DESC
      LIMIT $1 OFFSET $2`,
@@ -76,4 +76,11 @@ export async function listUsers(
   );
 
   return { rows, total };
+}
+export async function updateUserRole(client: PoolClient, id: number, role: string) {
+  const { rowCount } = await client.query(
+    'UPDATE users SET role = $1 WHERE id = $2',
+    [role, id]
+  );
+  return (rowCount ?? 0) > 0;
 }

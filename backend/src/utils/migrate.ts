@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS url_stats (
 -- ═══════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS audit_logs (
   id            BIGSERIAL PRIMARY KEY,
-  admin_id      BIGINT NOT NULL REFERENCES users(user_id),
-  action        VARCHAR(100) NOT NULL,
+  admin_id      BIGINT REFERENCES users(user_id), -- Nullable for public/anonymous events
+  action        TEXT NOT NULL,                   -- Changed from VARCHAR(100) to handle JSON details
   target_url_id BIGINT,
   created_at    TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
