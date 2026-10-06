@@ -48,7 +48,7 @@ export function DashboardHeader() {
             <img 
               alt="User avatar" 
               className="w-full h-full object-cover opacity-80 group-hover/user:opacity-100 transition-opacity"
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'Guest'}&background=random`} 
+              src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name || 'Guest'}&background=random`} 
             />
           </div>
         </div>

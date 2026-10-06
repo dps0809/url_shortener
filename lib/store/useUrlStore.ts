@@ -30,7 +30,7 @@ interface UrlState {
 
 interface UrlActions {
   fetch_urls: () => Promise<void>;
-  create_url: (data: any) => Promise<{ success: boolean; url_id?: string; error?: string }>;
+  create_url: (data: any) => Promise<{ success: boolean; url_id?: string; url?: Url; error?: string }>;
   fetch_url_analytics: (url_id: string) => Promise<void>;
   fetch_url_details: (url_id: string) => Promise<void>;
   bulk_create_urls: (urls: { long_url: string; custom_alias?: string }[]) => Promise<{ success: boolean; data?: any; error?: string }>;
@@ -66,7 +66,7 @@ export const useUrlStore = create<UrlState & UrlActions>()(
           urls: [response.data as Url, ...state.urls],
           is_loading: false 
         }));
-        return { success: true, url_id: response.data.url_id };
+        return { success: true, url_id: response.data.url_id, url: response.data as Url };
       }
       
       set({ is_loading: false, error: response.error });

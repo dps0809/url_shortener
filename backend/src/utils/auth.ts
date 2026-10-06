@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';  
 import pool from './db';
-import { UserModel } from '@/app/auth/models/user.model';
+import { UserModel } from '@/app/api/auth/models/user.model';
 
 const SALT_ROUNDS = 12;
 

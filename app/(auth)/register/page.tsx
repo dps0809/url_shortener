@@ -59,6 +59,10 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback')}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=consent`;
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
       {/* Existing Information Text Area (Left) */}
@@ -73,7 +77,11 @@ export default function RegisterPage() {
           <div className="glass-card animate-float border-white/10">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                <span className="material-symbols-outlined text-primary text-3xl">verified</span>
+                <svg className="w-7 h-7 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                  <path d="M10 14.17l-2.59-2.58L6 13l4 4 8-8-1.41-1.41L10 14.17z" fill="currentColor"/>
+                </svg>
               </div>
               <div>
                 <p className="text-white font-headline text-xl font-bold">Trusted Network</p>
@@ -169,13 +177,20 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-8 pt-8 border-t border-white/5 text-center">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Or login with</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Or continue with</p>
             <div className="flex gap-4 mt-4">
-              <button className="flex-1 glass-card bg-white/5 py-3 flex items-center justify-center hover:bg-white/10 transition-all">
-                <img src="https://lh3.googleusercontent.com/COxitq999s9re7fO866XpPOfA29YFasWvABAsTfG5PseS-9zC1mOjp9rF8t-69C1z_2XfH9fAETP24S2XfH9fAETP" className="w-5 h-5 grayscale opacity-60" alt="Google" />
-              </button>
-              <button className="flex-1 glass-card bg-white/5 py-3 flex items-center justify-center hover:bg-white/10 transition-all">
-                <span className="material-symbols-outlined text-slate-400">fingerprint</span>
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="flex-1 glass-card bg-white/5 py-3 px-4 flex items-center justify-center gap-3 hover:bg-white/10 transition-all rounded-lg group"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="text-sm font-semibold text-slate-300 group-hover:text-white transition-colors">Continue with Google</span>
               </button>
             </div>
           </div>
@@ -184,3 +199,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

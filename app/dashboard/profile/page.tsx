@@ -5,7 +5,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { ClayButton } from "@/components/ClayButton";
 import { GlassInput } from "@/components/GlassInput";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { useState } from "react";
+import { useUrlStore } from "@/lib/store/useUrlStore";
+import { useEffect, useState } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -15,13 +16,19 @@ const fadeInUp = {
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const { urls, fetch_urls } = useUrlStore();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Mock data for profile stats as per Stitch "Ethereal" design
+  useEffect(() => {
+    fetch_urls();
+  }, [fetch_urls]);
+
+  const totalClicks = urls.reduce((sum, link) => sum + (link.click_count || 0), 0);
+
   const stats = [
-    { label: "Links Deployed", value: "1,204", icon: "link", color: "text-primary" },
-    { label: "Total Engagement", value: "84.2K", icon: "trending_up", color: "text-emerald-400" },
-    { label: "System Authority", value: "Pro", icon: "verified", color: "text-amber-400" },
+    { label: "Links Deployed", value: urls.length.toString(), icon: "link", color: "text-primary" },
+    { label: "Total Engagement", value: totalClicks.toString(), icon: "trending_up", color: "text-emerald-400" },
+    { label: "System Authority", value: user?.role === 'admin' ? 'Root' : 'Pro', icon: "verified", color: "text-amber-400" },
   ];
 
   return (
@@ -31,7 +38,7 @@ export default function ProfilePage() {
         <motion.div {...fadeInUp} className="relative group">
           <div className="w-32 h-32 rounded-3xl bg-white/5 border-2 border-white/10 overflow-hidden shadow-2xl relative">
             <img 
-              src={user?.avatar || "https://ui-avatars.com/api/?name=" + (user?.name || "User") + "&background=random"} 
+              src={user?.avatar_url || "https://ui-avatars.com/api/?name=" + (user?.name || "User") + "&background=random"} 
               alt="Profile Identity" 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             />
@@ -103,10 +110,8 @@ export default function ProfilePage() {
                  <GlassInput value={user?.email || "internal@system.sh"} readOnly icon="alternate_email" />
               </div>
               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Assigned Role</label>
-                 <div className="flex items-center h-14 w-full bg-white/3 border border-white/5 rounded-2xl px-5 text-slate-400 font-medium">
-                   {user?.role === 'admin' ? 'System Administrator' : 'Standard Operative'}
-                 </div>
+                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Phone Number</label>
+                 <GlassInput value={user?.phone || "Not Provided"} readOnly icon="phone" />
               </div>
             </div>
           </GlassCard>

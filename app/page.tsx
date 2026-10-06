@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GlassCard } from "@/components/GlassCard";
 import { ClayButton } from "@/components/ClayButton";
 import Link from "next/link";
-import Image from "next/image";
 import { apiClient } from "@/lib/api-client";
 
 import { useScroll, useSpring } from "framer-motion";
@@ -15,10 +13,6 @@ const fadeInUp = {
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
   transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } as any
-};
-
-const stagger = {
-  whileInView: { transition: { staggerChildren: 0.1 } }
 };
 
 export default function LandingPage() {
@@ -68,13 +62,7 @@ export default function LandingPage() {
       <section className="text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/20 blur-[120px] -z-10 rounded-full opacity-50" />
         
-        <motion.div 
-          {...fadeInUp}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-8 border border-white/10"
-        >
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs font-bold text-white tracking-widest uppercase">Kinetic Ether Design System v2</span>
-        </motion.div>
+
         
         <motion.h1 
           {...fadeInUp}
@@ -111,88 +99,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Kinetic Bento Grid */}
-      <motion.section 
-        variants={stagger}
-        initial="initial"
-        whileInView="whileInView"
-        viewport={{ once: true }}
-        className="grid grid-cols-1 md:grid-cols-6 grid-rows-2 gap-6 min-h-[800px]"
-      >
-        {/* Analytics Bento - 4x1 */}
-        <motion.div variants={fadeInUp} className="md:col-span-4 md:row-span-1">
-          <GlassCard className="relative h-full overflow-hidden group border-white/5">
-            <div className="relative z-10 p-4">
-              <h3 className="font-headline font-bold text-3xl text-white mb-4">Neural Analytics</h3>
-              <p className="text-slate-400 max-w-md">Real-time click tracking across 190+ countries with millisecond resolution and AI-driven growth insights.</p>
-            </div>
-            
-            <div className="absolute bottom-0 right-0 w-3/5 h-[80%] opacity-80 group-hover:scale-105 transition-transform duration-1000">
-              <Image 
-                src="/assets/analytics_bento.png" 
-                alt="Neural Analytics Dashboard" 
-                fill
-                className="object-contain object-right-bottom drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]"
-                loading="lazy"
-              />
-            </div>
-          </GlassCard>
-        </motion.div>
 
-        {/* Global Edge Bento - 2x1 */}
-        <motion.div variants={fadeInUp} className="md:col-span-2 md:row-span-1">
-          <GlassCard className="h-full flex flex-col justify-center items-center text-center p-8 border-white/5">
-            <div className="relative w-full h-40 mb-6">
-              <Image 
-                src="/assets/global_edge.png" 
-                alt="Global Edge Infrastructure" 
-                fill
-                className="object-contain animate-float"
-                loading="lazy"
-              />
-            </div>
-            <h3 className="font-headline font-bold text-2xl text-white mb-2">Global Edge</h3>
-            <p className="text-slate-400 text-sm">Links resolve at the absolute edge. <span className="text-primary font-bold">18ms average latency</span> worldwide.</p>
-          </GlassCard>
-        </motion.div>
-
-        {/* Security Bento - 3x1 */}
-        <motion.div variants={fadeInUp} className="md:col-span-3 md:row-span-1">
-          <GlassCard className="h-full flex items-center p-8 gap-8 border-white/5">
-            <div className="flex-1">
-              <span className="material-symbols-outlined text-secondary text-4xl mb-4">verified_user</span>
-              <h3 className="font-headline font-bold text-2xl text-white mb-2">Vault-Grade Security</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Automatic malware scanning via Google Safe Browsing & VirusTotal on every single link.</p>
-            </div>
-            <div className="w-32 h-32 relative">
-              <Image 
-                src="/assets/security_shield.png" 
-                alt="Vault-Grade Security" 
-                fill
-                className="object-contain"
-                loading="lazy"
-              />
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        {/* Custom Domain Bento - 3x1 */}
-        <motion.div variants={fadeInUp} className="md:col-span-3 md:row-span-1">
-          <GlassCard className="h-full flex flex-col justify-between p-8 border-white/5 group">
-            <div>
-              <h3 className="font-headline font-bold text-2xl text-white mb-2">Custom Domains</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Your brand, our engine. Connect unlimited custom domains and boost click rates by 40%.</p>
-            </div>
-            <div className="flex flex-col gap-3 mt-6">
-              {['go.stripe.com/docs', 'link.airbnb.com/stay'].map((d, i) => (
-                <div key={i} className="bg-white/5 border border-white/5 px-4 py-3 rounded-lg text-sm text-slate-300 font-mono tracking-tighter group-hover:border-primary/30 transition-colors">
-                  {d}
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        </motion.div>
-      </motion.section>
 
       {/* Try It Now - Interactive Section */}
       <motion.section 
@@ -266,18 +173,7 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      {/* Social Proof */}
-      <motion.section 
-        {...fadeInUp}
-        className="text-center pt-20"
-      >
-        <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.4em] mb-16 font-inter">Propelling the worlds fastest teams</p>
-        <div className="flex flex-wrap justify-center items-center gap-16 opacity-40 grayscale contrast-200">
-          {["VORTEX", "SPHERE", "EQUINOX", "AETHER", "LUMINA"].map((brand) => (
-            <div key={brand} className="font-headline font-black text-3xl text-white tracking-widest">{brand}</div>
-          ))}
-        </div>
-      </motion.section>
+
 
       {/* Footer Branding */}
       <footer className="text-center border-t border-white/5 pt-20">

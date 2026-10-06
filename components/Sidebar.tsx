@@ -6,15 +6,13 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { ClayButton } from "@/components/ClayButton";
 
-const navItems = [
+type NavItem = { name: string; href: string; icon: string; adminOnly?: boolean };
+
+const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
-  { name: "Intelligence", href: "/dashboard/analytics", icon: "monitoring" },
+  { name: "Generate Link", href: "/dashboard/upload", icon: "add_circle" },
   { name: "Link Ecosystem", href: "/dashboard/links", icon: "link" },
-  { name: "Bulk Deployment", href: "/dashboard/upload", icon: "upload" },
   { name: "Identity Profile", href: "/dashboard/profile", icon: "person" },
-  { name: "System Settings", href: "/dashboard/settings", icon: "settings" },
-  { name: "Pricing Tiers", href: "/pricing", icon: "payments" },
-  { name: "Control Center", href: "/admin", icon: "admin_panel_settings", adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -67,7 +65,7 @@ export function Sidebar() {
           <div className="flex items-center gap-3 mb-4 relative z-10">
             <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
                <img 
-                src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'Guest'}&background=random`} 
+                src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name || 'Guest'}&background=random`} 
                 alt="User profile" 
                 className="w-full h-full object-cover opacity-80"
               />
@@ -77,11 +75,11 @@ export function Sidebar() {
               <p className="text-slate-500 text-[9px] truncate uppercase font-bold tracking-[0.1em] mt-0.5">{user?.role === 'admin' ? 'Root Authority' : 'Tier 1 Member'}</p>
             </div>
           </div>
-          <Link href="/pricing" className="relative z-10 block">
-            <ClayButton variant="blue" className="w-full py-2.5 text-[9px] font-black font-headline tracking-[0.2em] uppercase">
-              Scale Up
-            </ClayButton>
-          </Link>
+          {user?.phone && (
+            <div className="relative z-10 mt-3 bg-white/5 p-2 rounded-lg text-center border border-white/5">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.phone}</span>
+            </div>
+          )}
           {/* Subtle ambient glow in sidebar card */}
           <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>

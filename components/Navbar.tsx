@@ -32,9 +32,6 @@ export function Navbar() {
         >
           Dashboard
         </Link>
-        <Link href="#features" className="text-slate-400 hover:text-white transition-all text-sm font-headline">Features</Link>
-        <Link href="#pricing" className="text-slate-400 hover:text-white transition-all text-sm font-headline">Pricing</Link>
-        <Link href="#api" className="text-slate-400 hover:text-white transition-all text-sm font-headline">API</Link>
       </div>
 
       <div className="flex items-center gap-4">
@@ -44,7 +41,7 @@ export function Navbar() {
             <Link href="/dashboard">
               <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:border-primary/50 transition-colors">
                 <img 
-                  src={user.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuB_0OoQ9nsL8mhgQV6WypKJHgZRDPAEeOE8nmTIqi8qKWYxR6qKDtktyBJMQZtL6y7uItYphyJxy4nn-uyPWT-L3DMcCUxVSeDpfR-oEJAKSXl4D_4UGPMW3y0iA-Tz_ysC2aO6kUX7EUzj3doA217J9kkPDSuMfvfJurQVt6uxlAacdFkXwdn4etIOdbJyS7CSM1NgPpZ4nY05-4cGoqIkaPiE-UWoTB8-_fgO6ZifevSmfbxDs03vMsla3AMonAP7IM_ShYltW4g"} 
+                  src={user.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuB_0OoQ9nsL8mhgQV6WypKJHgZRDPAEeOE8nmTIqi8qKWYxR6qKDtktyBJMQZtL6y7uItYphyJxy4nn-uyPWT-L3DMcCUxVSeDpfR-oEJAKSXl4D_4UGPMW3y0iA-Tz_ysC2aO6kUX7EUzj3doA217J9kkPDSuMfvfJurQVt6uxlAacdFkXwdn4etIOdbJyS7CSM1NgPpZ4nY05-4cGoqIkaPiE-UWoTB8-_fgO6ZifevSmfbxDs03vMsla3AMonAP7IM_ShYltW4g"} 
                   alt="User avatar" 
                 />
               </div>

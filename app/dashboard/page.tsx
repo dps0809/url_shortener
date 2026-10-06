@@ -34,12 +34,15 @@ export default function DashboardPage() {
       if (response.data) {
         setStats(response.data);
       } else {
-        // Fallback for demo if endpoint not yet implemented
+        // Fallback to real calculated data from the loaded links
+        const realTotalClicks = urls.reduce((sum, link) => sum + (link.click_count || 0), 0);
+        const realActiveLinks = urls.filter(link => link.status === 'active').length;
+        
         setStats({
-          total_clicks: '12,450',
-          active_links: urls.length.toString(),
+          total_clicks: realTotalClicks.toString(),
+          active_links: realActiveLinks.toString(),
           total_links: urls.length.toString(),
-          trends: { clicks: '+12%', links: '+4 new' }
+          trends: { clicks: 'Real Time', links: 'Live' }
         });
       }
     };
@@ -113,13 +116,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Dashboard Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Links Table (2/3 width) */}
-        <motion.div {...fadeInUp} transition={{ delay: 0.4 }} className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-8">
+        {/* Recent Links Table */}
+        <motion.div {...fadeInUp} transition={{ delay: 0.4 }}>
           <GlassCard className="p-0 overflow-hidden border-white/5">
             <div className="px-8 py-6 flex justify-between items-center border-b border-white/5 bg-white/[0.02]">
               <h4 className="text-xl font-bold font-headline text-white tracking-tight uppercase italic">Active Link Grid</h4>
-              <button className="text-primary text-xs font-bold hover:underline tracking-widest uppercase">Full Manifest</button>
+              <Link href="/dashboard/links" className="text-primary text-xs font-bold hover:underline tracking-widest uppercase">Full Manifest</Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -140,7 +143,7 @@ export default function DashboardPage() {
                     <tr>
                       <td colSpan={4} className="px-8 py-16 text-center text-slate-500 uppercase text-[10px] tracking-widest">No links found in manifest.</td>
                     </tr>
-                  ) : urls.map((link, idx) => (
+                  ) : urls.slice(0, 10).map((link, idx) => (
                     <tr key={link.url_id} className="hover:bg-white/[0.03] transition-colors group">
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-2">
@@ -165,61 +168,6 @@ export default function DashboardPage() {
             </div>
           </GlassCard>
         </motion.div>
-
-        {/* Quick Actions / Analytics Preview (1/3 width) */}
-        <div className="space-y-6">
-          <motion.div {...fadeInUp} transition={{ delay: 0.5 }}>
-            <GlassCard className="p-8 relative overflow-hidden group border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent">
-              <div className="relative z-10">
-                <h4 className="text-xl font-bold font-headline text-white mb-8 tracking-tight uppercase italic underline decoration-primary underline-offset-8">Neural Flow</h4>
-                <div className="space-y-8">
-                  {[
-                    { label: 'Cloud Distribution', value: 65, color: 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]' },
-                    { label: 'Edge Proximity', value: 25, color: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' },
-                    { label: 'Bot Filtration', value: 10, color: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' },
-                  ].map((insight) => (
-                    <div key={insight.label}>
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] mb-3">
-                        <span className="text-slate-500">{insight.label}</span>
-                        <span className="text-white">{insight.value}%</span>
-                      </div>
-                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${insight.value}%` }}
-                          transition={{ duration: 1, delay: 0.8 }}
-                          className={`h-full ${insight.color} rounded-full`} 
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute -right-8 -bottom-8 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-1000 rotate-12">
-                <span className="material-symbols-outlined text-[180px]">hub</span>
-              </div>
-            </GlassCard>
-          </motion.div>
-
-          {/* Promo Card matching Stitch clay style */}
-          <motion.div {...fadeInUp} transition={{ delay: 0.6 }}>
-            <div className="clay-button-purple rounded-3xl p-8 text-white relative overflow-hidden group shadow-[0_20px_40px_rgba(147,51,234,0.15)] flex flex-col justify-between h-56">
-              <div className="relative z-10">
-                <h4 className="text-2xl font-black font-headline mb-3 leading-none italic tracking-tighter">Atmospheric Tier</h4>
-                <p className="text-xs opacity-70 mb-6 font-body leading-relaxed max-w-[180px]">Upgrade to kinetic precision with branding layers.</p>
-              </div>
-              <div className="relative z-10">
-                <button className="bg-white text-purple-600 px-8 py-3 rounded-full text-[10px] font-black font-headline uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl hover:-translate-y-1">
-                  Elevate Now
-                </button>
-              </div>
-              <div className="absolute right-0 bottom-0 top-0 left-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-              <div className="absolute -right-4 -bottom-4 opacity-20 group-hover:-translate-x-4 group-hover:-translate-y-4 transition-transform duration-1000">
-                <span className="material-symbols-outlined text-[100px]">auto_awesome</span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
       </div>
     </div>
   );

@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface ClayButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+import { HTMLMotionProps } from "framer-motion";
+
+interface ClayButtonProps extends HTMLMotionProps<"button"> {
   variant?: "blue" | "purple" | "glass";
   children: React.ReactNode;
 }
