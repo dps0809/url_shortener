@@ -1,0 +1,15 @@
+FROM node:20-alpine AS worker
+
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+COPY --chown=nextjs:nodejs package.json package-lock.json ./
+RUN npm ci
+COPY --chown=nextjs:nodejs tsconfig.json ./
+COPY --chown=nextjs:nodejs backend ./backend
+COPY --chown=nextjs:nodejs scripts ./scripts
+
+USER nextjs
+CMD ["npm", "run", "workers"]

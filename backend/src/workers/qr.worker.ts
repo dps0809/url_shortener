@@ -23,13 +23,13 @@ export const createQrWorker = () => {
           throw new Error(`URL record not found for urlId: ${urlId}`);
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://127.0.0.1:3000';
         const shortUrl = `${baseUrl}/${url.short_code}`;
 
-        // QR generation is simulated for now, but we add a 10s logic timeout just in case
+        // QR generation is simulated for now, but we add a 5s logic timeout just in case
         const qrUrl = await Promise.race([
           generateQRCode(urlId, shortUrl),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('QR Generation Timeout')), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('QR Generation Timeout')), 5000))
         ]) as string;
 
         console.log(`[qrWorker] [SUCCESS] Job ${job.id} - QR URL: ${qrUrl}`);

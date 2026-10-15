@@ -499,6 +499,29 @@ url_shortener/
 
 ## Setup & Running
 
+### Run the full stack with Docker Compose
+
+Docker Compose runs the Next.js application, its BullMQ background workers, PostgreSQL, and Redis. It applies the database migration before starting the application services.
+
+```powershell
+# From the project root
+Copy-Item .env.example .env
+# Edit .env and replace JWT_SECRET, INTERNAL_API_SECRET, and DB_PASSWORD.
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Open <http://localhost:3000>. The first build can take a few minutes. Stop the containers with `Ctrl+C`, or run:
+
+```powershell
+docker compose -f docker/docker-compose.yml down
+```
+
+PostgreSQL and Redis data are kept in Docker volumes when the containers are stopped. The Compose file and example credentials are intended for local development; use managed data services and production secrets for deployment.
+
+The public Google OAuth client ID and callback URL are embedded during the Next.js image build. If you change either value in `.env`, rebuild the `web` image.
+
+### Run without Docker
+
 ```bash
 # 1. Install dependencies
 npm install
@@ -506,7 +529,7 @@ npm install
 # 2. Start PostgreSQL (port 5432) and Redis Stack (port 6379)
 
 # 3. Run database migration
-npx tsx --env-file=.env.local backend/src/utils/migrate.ts
+npm run db:migrate
 
 # 4. Start development server
 npm run dev
@@ -520,7 +543,8 @@ npm run dev
 "build": "next build"     // Production build
 "start": "next start"     // Production server
 "lint": "eslint"          // Linting
-"db:migrate": "npx tsx --env-file=.env.local lib/migrate.ts"
+"db:migrate": "tsx backend/src/utils/migrate.ts"
+"workers": "tsx scripts/start_workers.ts"
 ```
 
 ---
